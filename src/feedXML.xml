@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
+    <title>second feed entry</title>
+    <subtitle>for demonstration purposes</subtitle>
+    <link>www.cs.adelaide.edu.au/users/third/ds/14ds2s1</link>
+    <updated>2015-08-07T18:29:02Z</updated>
+    <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6b</id>
+    <summary>here's another summary entry which a reader would normally use to work out if they wanted to read some more. It's quite handy.</summary>
+</feed>
