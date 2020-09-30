@@ -80,6 +80,7 @@ public class GETClient implements Runnable {
             }
         }
 
+        // create a new get thread to run this get client application
         GETClient client = new GETClient(serverName,portNumber);
         Thread getThread = new Thread(client);
         getThread.start();
@@ -132,20 +133,21 @@ public class GETClient implements Runnable {
 
     // display XML in a pretty format
     private void displayXML (String xml) {
-        System.out.println("========== GET Client:: Display News ========");
-
-        if (xml.substring(0,4).equals("null") ) {
-                System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
-        } else {
+        System.out.println("============ GET Client:: Display News ==========");
+//        if (xml.substring(0,4).equals("null") ) {
+//                System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
+//        } else {
             prettyFormat(xml);
-        }
-        System.out.println("================================");
+//        }
+        System.out.println("=================================================\n");
     }
 
     // todo make xml pretty
-    public static String prettyFormat(String input) {
-        System.out.println(input);
-        return input;
+    public static void prettyFormat(String input) {
+        if (input.substring(0,4).equals("null") ) {
+            System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
+        } else {
+        System.out.println(input);}
     }
 
     @Override

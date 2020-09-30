@@ -103,8 +103,7 @@ public class AggregationServer extends Thread{
             // update local time by +1
             incrementLamport();
 
-            System.out.println("\nATOM:: Finish all processes. Wait for next request.");
-            System.out.println("= = = = = = = = = = = = = = = = = = = = = = = =\n");
+            System.out.println("\nATOM:: Finish all processes. Wait for next request.\n= = = = = = = = = = = = = = = = = = = = = = = = =\n");
         } catch(SocketTimeoutException s) {
             System.out.println("ATOM:: Socket timed out!");
         } catch (IOException e) {
@@ -114,12 +113,15 @@ public class AggregationServer extends Thread{
 
     protected String processPUT(String inMSG, String contentServerID){
         System.out.println("\n*********************************************");
-        System.out.println("ATOM:: Receive [PUT] from ContentServer: [" + contentServerID + "]");
+        System.out.println("ATOM:: Receive [PUT] from Content Server [" + contentServerID + "]");
         System.out.println("ATOM:: Update Lamport TimeStamp: " + logical_clock  );
         System.out.println("*********************************************\n");
 
         // update this content server's feed timer to zero
-        resetFeedTimer(contentServerID);
+        if (!feedList.isEmpty()){
+            resetFeedTimer(contentServerID);
+        }
+
 
         // aggregate new feed with id
         aggregationFeeds(inMSG, contentServerID);
@@ -136,19 +138,21 @@ public class AggregationServer extends Thread{
     }
 
     private void resetFeedTimer(String contentServerID){
-        System.out.println("ATOM:: Reset Feeds timer to zero for " + contentServerID);
-        for (int i = 0; i < feedList.size(); i++) {
-            if (feedList.get(i).getSource().equals(contentServerID))  {
-                feedList.get(i).setTimer(0);
+        if (activeContentServers.contains(contentServerID)){
+            System.out.println("ATOM:: Reset Feeds timer to zero for " + contentServerID);
+            for (int i = 0; i < feedList.size(); i++) {
+                if (feedList.get(i).getSource().equals(contentServerID))  {
+                    feedList.get(i).setTimer(0);
+                }
             }
         }
     }
 
     // get feeds from backup file
     protected String processGET(){
-        System.out.println("\n****************************************");
+        System.out.println("\n********************************************");
         System.out.println("ATOM:: Receive [GET] from Client Application");
-        System.out.println("****************************************\n");
+        System.out.println("********************************************\n");
 
         // read feeds from local backup.txt file
         String readBackup = "";
@@ -187,12 +191,12 @@ public class AggregationServer extends Thread{
                             for (Feed f: feedList) {
                                 f.setTimer(f.getTimer()+1);
                             }
-                            System.out.print("ATOM:: Timer Test: "+ feedList.getFirst().getTimer()  + "  ATOM:: Total feeds number: " + feedList.size());
+                            System.out.print("ATOM:: Heart Beat Test: "+ feedList.getFirst().getTimer()  + "   Total feeds number: " + feedList.size());
                             String active = "";
                             for (int i = 0; i < activeContentServers.size(); i++) {
                                 active += activeContentServers.get(i) + " ";
                             }
-                            System.out.println(" ATOM:: ContentServer ID: " + active);
+                            System.out.println(" Active Content Server(ID): " + active);
                             updateFeeds();
                         }
 
@@ -280,7 +284,17 @@ public class AggregationServer extends Thread{
                 String removeID = feedList.get(i).getSource();
                 feedList.remove(i);
                 activeContentServers.remove(removeID);
-                System.out.println("\nATOM:: Update & Remove all Content from Server ID [" + removeID + "]");
+                System.out.println("\nATOM :: Content Server [" + removeID + "] has Expired. Remove all feeds from this server.");
+
+                if (!activeContentServers.isEmpty()){
+                    String active = "ATOM :: Active Content Server: ";
+                    for (String str:activeContentServers) {
+                        active += str + " ";
+                    }
+                    System.out.println(active);
+                } else {
+                    System.out.println("ATOM :: No active Content Server in the system.");
+                }
                 isUpdated = true;
             }
         }
@@ -314,7 +328,7 @@ public class AggregationServer extends Thread{
 
     // write finalFeeds to local file
     private void backupFeeds (){
-        System.out.println("ATOM:: Backup feeds to local file backup.txt\n");
+        System.out.println("ATOM:: Backup feeds to local file \"backup.txt\"\n");
         String latestFeeds = "";
         for (int i = 0; i < feedList.size(); i++) {
             latestFeeds = latestFeeds + feedList.get(i).getContent() + "~~"+ feedList.get(i).getSource() +"^^^^^\n";

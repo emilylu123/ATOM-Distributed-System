@@ -78,10 +78,10 @@ public class ContentServer extends XMLParser implements Runnable {
         if (args.length > 3) contentServerID = args[3];
         else contentServerID = "unknown";
 
+        // create a new put thread to run this content sever
         content = new ContentServer(serverName,portNumber,contentServerID);
-        Thread putXml = new Thread(content);
-        putXml.start();
-
+        Thread putThread = new Thread(content);
+        putThread.start();
     }
 
     private void incrementLamport (){
@@ -115,7 +115,7 @@ public class ContentServer extends XMLParser implements Runnable {
 
         // send to ATOM server + timestamp+1
         outContent.writeUTF(putMSG);
-        if (debug) System.out.println("Content:: Send new feeds to ATOM Server");
+        if (debug) System.out.println("Content:: Send a new feed to ATOM Server");
 
         incrementLamport();
 
@@ -127,7 +127,7 @@ public class ContentServer extends XMLParser implements Runnable {
 
         //update Lamport by max + 1
         updateLamport(timestamp);
-        System.out.println("Content::Receive Status Code ["+ statusCode + "] @local time " + logical_clock);
+        System.out.println("Content::Receive Status Code ["+ statusCode + "] @ time " + logical_clock);
         return statusCode;
     }
 
@@ -162,11 +162,11 @@ public class ContentServer extends XMLParser implements Runnable {
                 System.out.println("EMPTY. Try again.");
                 //todo try again
             } else if (statusCode.equals("200")) {
-                System.out.println("Content:: PUT request Successes again!");
+                System.out.println("Content:: Reconnect Successes. PUT request Successes again!");
             } else if (statusCode.equals("201")) {
                 System.out.println("Content:: HTTP_CREATED. PUT request Successes!");
             } else if (statusCode.equals("204")) {
-                System.out.println("Content:: Feed has NO content");
+                System.out.println("Content:: Error. Feed has NO content");
                 PUT(xmlName,contentServerID);
             } else if (statusCode.equals("400")) {
                 System.out.println("Content:: Wrong message");

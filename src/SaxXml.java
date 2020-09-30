@@ -26,7 +26,7 @@ public class SaxXml {
     }
 
     public void readFile(String inputName) throws TransformerConfigurationException, IOException {
-        if (debug) System.out.println("Reading Input File...");
+        if (debug) System.out.println("Sax XML :: Reading Input File...");
         BufferedReader reader;
         try{
             reader = new BufferedReader(new FileReader(inputName));
@@ -70,7 +70,7 @@ public class SaxXml {
 
     // generate xml file
     public static void createXml(String xmlName) throws TransformerConfigurationException, IOException {
-        if (debug) System.out.println("Creating Feed XML file...");
+        if (debug) System.out.println("Sax XML :: Creating Feed XML file...");
         // create a SAXTransformerFactory object
         SAXTransformerFactory tff = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
 
@@ -152,13 +152,13 @@ public class SaxXml {
             handler.endElement("", "", "feed");
             // close document
             handler.endDocument();
-            System.out.println("XML File is successfully created");
+            System.out.println("XML :: XML File is successfully created");
         } catch (SAXException saxException) {
             saxException.printStackTrace();
-            System.out.println("Error: XML File creating is failed");
+            System.out.println("XML :: Error: XML File creating is failed");
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error: XML File creating is failed");
+            System.out.println("XML :: Error: XML File creating is failed");
         }
     }
 
