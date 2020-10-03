@@ -10,10 +10,10 @@ import javax.xml.transform.TransformerConfigurationException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
+import static java.io.Console.*;
 
 public class ContentServer extends XMLParser implements Runnable {
-    private static boolean debug = true;
-    private static final int TRYMAX = 5;
+    private final static int TRYMAX = 5;  // define reconnect times if connection fails
     private static int tryCount = 0;
     protected static Socket contentSocket;
     private static ContentServer content;
@@ -32,11 +32,9 @@ public class ContentServer extends XMLParser implements Runnable {
             try {
                 contentSocket = new Socket(this.serverName,this.portNumber);
                 System.out.println("================================");
-                System.out.println("Content Server ID [" + this.contentServerID +"] is ready! ");
-                System.out.println("Local time: " + logical_clock);
-                System.out.println("Address: "+ this.contentSocket.getLocalSocketAddress());
+                System.out.println("Content Server [ID " + this.contentServerID +"] is ready! ");
+                System.out.println("Address: "+ this.contentSocket.getLocalSocketAddress()+"\nLocal time: " + logical_clock);
                 System.out.println("================================");
-
                 break;
             } catch (ConnectException e) {
                 try {
@@ -69,6 +67,7 @@ public class ContentServer extends XMLParser implements Runnable {
 
         if (arr.length > 1) portNumber = Integer.parseInt(arr[1]);
         else portNumber = 4567; // by default
+
         if (args.length > 1) inputFile = args[1];
         else inputFile = "input.txt";
 
@@ -79,9 +78,49 @@ public class ContentServer extends XMLParser implements Runnable {
         else contentServerID = "unknown";
 
         // create a new put thread to run this content sever
-        content = new ContentServer(serverName,portNumber,contentServerID);
+        content = new ContentServer(serverName, portNumber, contentServerID);
         Thread putThread = new Thread(content);
         putThread.start();
+    }
+
+    @Override
+    public void run() {
+        // read news feed from local file given from commond line and create a XML file
+        try {
+            //read input file and create a XML file
+            createNewsFeed(inputFile, xmlName);
+
+            // send xml to ATOM server and receiver returned ststus code
+            String statusCode = "";
+            statusCode = PUT(xmlName,this.contentServerID);
+
+            // send feed XML file to ATOM server
+            System.out.println("sending XML");
+            sendXML(xmlName);
+            System.out.println("XML file is sent");
+
+            // receive status code and take actions accordingly
+            if (statusCode.isEmpty()){
+                System.out.println("Receive no status Code. Content Server will sent PUT request again.");
+                PUT(xmlName,contentServerID);
+            } else if (statusCode.equals("200")) {
+                System.out.println("Content:: Reconnect Successes. PUT request Successes again!");
+            } else if (statusCode.equals("201")) {
+                System.out.println("Content:: HTTP_CREATED. PUT request Successes!");
+            } else if (statusCode.equals("204")) {
+                System.out.println("Content:: Error: The Feed received from ATOM was empty. Content Server will sent PUT request again.");
+                PUT(xmlName,contentServerID);
+            } else if (statusCode.equals("400")) {
+                System.out.println("Content:: Wrong message");
+            } else if (statusCode.equals("500")) {
+                System.out.println("Content::Feeds do not make sense. Content Server will sent PUT request again.");
+                PUT(xmlName,contentServerID);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+        }
     }
 
     private void incrementLamport (){
@@ -104,8 +143,7 @@ public class ContentServer extends XMLParser implements Runnable {
 
         // read feed XML file and format it as a String
         String newsFeed = readXML(xmlName);
-
-        String type = "XML"; // todo ??
+        String type = "XML";
         int length = newsFeed.length();
 
         String header = "PUT /atom.xml HTTP/1.1\n" + "User-Agent: ATOMClient/1/0\n";
@@ -115,7 +153,8 @@ public class ContentServer extends XMLParser implements Runnable {
 
         // send to ATOM server + timestamp+1
         outContent.writeUTF(putMSG);
-        if (debug) System.out.println("Content:: Send a new feed to ATOM Server");
+
+        System.out.println("Content:: Send a new feed to ATOM Server");
 
         incrementLamport();
 
@@ -127,7 +166,7 @@ public class ContentServer extends XMLParser implements Runnable {
 
         //update Lamport by max + 1
         updateLamport(timestamp);
-        System.out.println("Content::Receive Status Code ["+ statusCode + "] @ time " + logical_clock);
+        System.out.println("Content:: Receive Status Code ["+ statusCode + "] @ time " + logical_clock);
         return statusCode;
     }
 
@@ -149,34 +188,27 @@ public class ContentServer extends XMLParser implements Runnable {
         return readXML;
     }
 
-    @Override
-    public void run() {
-        // read news feed from local file given from commond line and create a XML file
+    private void sendXML(String xmlName) throws IOException {
+        FileInputStream fis = null;
+        BufferedInputStream bis = null;
+        OutputStream os = null;
         try {
-            createNewsFeed(inputFile, xmlName);
-            String statusCode = "";
-            statusCode = PUT(xmlName,this.contentServerID);
-
-            // todo status code
-            if (statusCode.isEmpty()){
-                System.out.println("EMPTY. Try again.");
-                //todo try again
-            } else if (statusCode.equals("200")) {
-                System.out.println("Content:: Reconnect Successes. PUT request Successes again!");
-            } else if (statusCode.equals("201")) {
-                System.out.println("Content:: HTTP_CREATED. PUT request Successes!");
-            } else if (statusCode.equals("204")) {
-                System.out.println("Content:: Error. Feed has NO content");
-                PUT(xmlName,contentServerID);
-            } else if (statusCode.equals("400")) {
-                System.out.println("Content:: Wrong message");
-            } else if (statusCode.equals("500")) {
-                System.out.println("Content::Feeds do not make sense");
-            }
+            // send file
+            File myFile = new File (xmlName);
+            byte [] mybytearray  = new byte [(int)myFile.length()];
+            fis = new FileInputStream(myFile);
+            bis = new BufferedInputStream(fis);
+            bis.read(mybytearray,0,mybytearray.length);
+            os = contentSocket.getOutputStream();
+            System.out.println("Content:: Sending " + xmlName + "(" + mybytearray.length + " bytes)");
+            os.write(mybytearray,0,mybytearray.length);
+            os.flush();
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (TransformerConfigurationException e) {
-            e.printStackTrace();
+        } finally {
+            if (bis != null) bis.close();
+            if (os != null) os.close();
+            System.out.println("Content:: XML file is sent.");
         }
     }
 }

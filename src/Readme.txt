@@ -42,12 +42,12 @@ GETClient has following methods:
 
 A automated testing and one manually testing are provided.
 
-The test file is named as "TesterSingleServer"
-The port number is set as "4567"
+The test file is named as "TesterMultipleServer"
+The port number is set as "4567" as default
 
 //How to run tests
 1. Run TesterSingleServer
-	Console Command: java esterSingleServer
+	Console Command: java TesterMultipleServer
 
 // How to test manually
 1. Run AggregationServer
@@ -59,10 +59,9 @@ The port number is set as "4567"
 3.Run GETClient
 	Console Command:  java GETClient 0.0.0.0:4567
 
-
 Checklist
 Basic functionality:
-  XML parsing works
+√  XML parsing works
 √ client, Atom server and content server processes start up and communicate
 √ PUT operation works for one content server
 √ GET operation works for many read clients
@@ -72,6 +71,6 @@ Basic functionality:
 Full functionality:
 
 √ Lamport clocks are implemented
-  All error codes are implemented: empty XML, malformed XML
+√ All error codes are implemented: empty XML, malformed XML
 √ Content servers are replicated and fault tolerant
 

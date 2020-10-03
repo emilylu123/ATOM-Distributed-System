@@ -41,9 +41,9 @@ public class TesterMultipleServer implements Runnable {
             Thread.sleep(1500);
 
             // Start ATOM Server,
-            System.out.println("\n>> TEST 3 :: Start ATOM Server\n>> Expect :: Connection Successful and process requests\n>> Expect :: GETclient 1 receives empty feed. GETclient 2 receives 1 feed from Content Server (ID:12).\n");
+            System.out.println("\n>> TEST 3 :: Start ATOM Server\n>> Expect :: 1. Connection Successful and process requests\n>> Expect :: 2. GETclient 1 receives empty feed. \n>> Expect :: 3. GETclient 2 receives 1 feed from Content Server (ID:12).\n");
             test.start();
-            Thread.sleep(8000);
+            Thread.sleep(6000);
 
             // PUT from content server 1 again
             System.out.println("\n>> TEST 4 :: Run Content Server (ID:12) & send PUT request again \n>> Expect :: PUT successful and keep id12 feeds alive\n");
@@ -56,19 +56,19 @@ public class TesterMultipleServer implements Runnable {
             client2.start();
 
             // 12s later will delete content feeds
-            System.out.println("\n>> TEST 6 :: HeartBeat test (Thread sleep 12s)\n>> Expect :: ATOM server expires feeds (12s)\n");
+            System.out.println("\n>> TEST 6 :: HeartBeat test\n>> Expect :: ATOM server expires feeds (12s)\n");
             Thread.sleep(3500);
 
             // PUT from content server 1 again
-            System.out.println("\n>> TEST 7 ::Start Content Server (ID:22) & send PUT request again\n>> Expect :: PUT successful\n");
+            System.out.println("\n>> TEST 7 ::Start Content Server (ID:22) & send PUT request\n>> Expect :: PUT successful\n");
             content3.start();
-            Thread.sleep(12500);
+            Thread.sleep(13000);
 
 
             // Get from client 3, xml should be empty
             System.out.println("\n>> TEST 8 :: GET from client 3 (after all feeds expired)\n>> Expect :: Receive 0 feeds from ATOM\n");
             client3.start();
-            Thread.sleep(5000);
+            Thread.sleep(3000);
 
             System.out.println("\n>> All TESTS are finished.\n>> Please check results.\n");
         } catch (InterruptedException e) {

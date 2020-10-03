@@ -101,18 +101,15 @@ public class GETClient implements Runnable {
         try {
             inGET = new DataInputStream(clientSocket.getInputStream());
             outGET = new DataOutputStream(clientSocket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        // send GET request and increment Lamport timestamp
-        String getMSG = "GET@" + logical_clock;
-        try {
+            // send GET request and increment Lamport timestamp
+            String getMSG = "GET@" + logical_clock;
             outGET.writeUTF(getMSG);
             incrementLamport();
 
             // receive news from ATOM server and update timestamp
             String news = inGET.readUTF();
+            receiveXML();
             if (!news.isEmpty()) {
                 String[] arr = news.split("@");
                 String xml = arr[0];
@@ -153,6 +150,38 @@ public class GETClient implements Runnable {
     @Override
     public void run() {
         GET();
+    }
+
+    private void receiveXML() throws IOException {
+        int bytesRead;
+        int current = 0;
+        FileOutputStream fos = null;
+        BufferedOutputStream bos = null;
+        String FILE_TO_RECEIVED = "feedXML_client.xml";
+
+        System.out.println("GETClient:: receiving XML file");// receive file
+        int FILE_SIZE = 102400;
+        byte[] mybytearray = new byte[FILE_SIZE];
+
+        InputStream is = clientSocket.getInputStream();
+        fos = new FileOutputStream(FILE_TO_RECEIVED);
+        bos = new BufferedOutputStream(fos);
+        bytesRead = is.read(mybytearray, 0, mybytearray.length);
+        current = bytesRead;
+
+        do {
+            bytesRead =
+                    is.read(mybytearray, current, (mybytearray.length - current));
+            if (bytesRead >= 0) current += bytesRead;
+        } while (bytesRead > -1);
+
+        bos.write(mybytearray, 0, current);
+        bos.flush();
+        System.out.println("GETClient:: File " + FILE_TO_RECEIVED
+                + " downloaded (" + current + " bytes read)");
+
+        if (fos != null) fos.close();
+        if (bos != null) bos.close();
     }
 }
 

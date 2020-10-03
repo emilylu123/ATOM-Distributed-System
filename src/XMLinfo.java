@@ -13,9 +13,11 @@ public class XMLinfo {
     private String title;
     private String subtitle;
     private String link;
-    private String id;
     private String updated;
     private String author;
+    private String name;
+    private String id;
+    private String entry;
     private String summary;
 
     public String getTitle() {
@@ -42,14 +44,6 @@ public class XMLinfo {
         this.link = link;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getUpdated() {
         return updated;
     }
@@ -64,6 +58,30 @@ public class XMLinfo {
 
     public void setAuthor(String author) {
         this.author = author;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getEntry() {
+        return entry;
+    }
+
+    public void setEntry(String entry) {
+        this.entry = entry;
     }
 
     public String getSummary() {

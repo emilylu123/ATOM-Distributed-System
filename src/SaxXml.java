@@ -14,9 +14,8 @@ import javax.xml.transform.stream.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.AttributesImpl;
 
-// todo XML entry
+// create XML entry as a object
 public class SaxXml {
-    private static boolean debug = true;
 //    private static boolean debug = false;
     private static XMLinfo xml = new XMLinfo();
 
@@ -26,7 +25,7 @@ public class SaxXml {
     }
 
     public void readFile(String inputName) throws TransformerConfigurationException, IOException {
-        if (debug) System.out.println("Sax XML :: Reading Input File...");
+        System.out.println("Sax XML :: Reading Input File...");
         BufferedReader reader;
         try{
             reader = new BufferedReader(new FileReader(inputName));
@@ -38,8 +37,6 @@ public class SaxXml {
                 list.add(line);
             }
             reader.close();
-//            System.out.println(list.size());
-            // todo modify entry attributes
             for (int i = 0; i < list.size()-1; i++) {
                 String tmp = list.get(i);
                 String [] arr = tmp.split(":",2);
@@ -50,19 +47,11 @@ public class SaxXml {
                     case "id":          xml.setId(arr[1]);       break;
                     case "updated":     xml.setUpdated(arr[1]);  break;
                     case "summary":     xml.setSummary(arr[1]);  break;
-                    case "entry":       break; // todo
+                    case "entry":       break;
                     default:            break;
                 }
             }
-            /* sample test
-                xml.setTitle("My example feed");
-                xml.setSubtitle("www.cs.adelaide.edu.au");
-                xml.setLink("ww.cs.adelaide.edu.au");
-                xml.setId("uuid:60a76c80-d399-11d9-b93C-0003939e0af6");
-                xml.setUpdated("2015-08-07T18:30:02Z");
-                xml.setAuthor("Santa Claus");
-                xml.setSummary("here is some plain text. Because I'm not completely evil, you can assume that this will always be less than 1000 characters. And, as I've said before, it will always be plain text.");
-            */
+
         } catch (IOException e){
             e.printStackTrace();
         }
@@ -70,7 +59,7 @@ public class SaxXml {
 
     // generate xml file
     public static void createXml(String xmlName) throws TransformerConfigurationException, IOException {
-        if (debug) System.out.println("Sax XML :: Creating Feed XML file...");
+        System.out.println("Sax XML :: Creating Feed XML file...");
         // create a SAXTransformerFactory object
         SAXTransformerFactory tff = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
 
