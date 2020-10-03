@@ -8,6 +8,9 @@
 //==============================================================
 import java.io.*;
 import java.util.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.*;
 import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.*;
@@ -22,6 +25,55 @@ public class SaxXml {
     public void parsingXML(String inputName, String xmlName) throws IOException, TransformerConfigurationException {
         readFile(inputName);
         createXml(xmlName);
+    }
+
+    public void readXML(String xmlName){
+        String xml = "";
+        BufferedReader reader;
+        try{
+            reader = new BufferedReader(new FileReader(xmlName));
+            String line = reader.readLine();;
+            do{
+                xml += line + "\n";
+                line = reader.readLine();
+            }  while (line != null);
+            reader.close();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+
+        try{
+            SAXParser saxP = spf.newSAXParser() ;
+            InputStream is = getStringStream( xml );
+            if(is == null)
+                System.out.println("The XML file is empty.");
+            else {
+                System.out.println("Parsing in SAXHandler");
+                saxP.parse(is,new MyDefaultHandler());
+            }
+        }catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private InputStream getStringStream(String xml) {
+        if (xml != null && !xml.trim().equals("")) {
+            try {
+                ByteArrayInputStream xmlStream = new ByteArrayInputStream(xml.getBytes());
+                return xmlStream;
+            }catch (Exception ex){
+                System.out.println("something wrong happened.");;
+            }
+        }
+        return null;
     }
 
     public void readFile(String inputName) throws TransformerConfigurationException, IOException {

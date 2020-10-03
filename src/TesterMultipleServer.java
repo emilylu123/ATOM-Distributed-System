@@ -19,8 +19,9 @@ public class TesterMultipleServer implements Runnable {
         // create new TesterSingleServer object
         TesterMultipleServer tms = new TesterMultipleServer();
 
-        // First time run test will delete local backup files
+        // First time run test will delete local backup files and all feed XML files
         deleteFile();
+
         // create multiple threads for running content server and GETclient applications
         createThreads();
 
@@ -148,19 +149,29 @@ public class TesterMultipleServer implements Runnable {
     }
 
 
-    // delete local backup file named "backup.txt"
+    // delete local backup file named "backup.txt" and all feedXML files
     public static void deleteFile(){
         try{
             System.out.println(">> Test Preparation:: Delete local backup and XML feed files...");
-            File backupfile = new File("backup.txt");
-            File feedfile = new File("feedXml.xml");
+            File backupfile = new File("backup.xml");
+            File feedfile1 = new File("feedXML.xml");
+            File feedfile2 = new File("feedXML_client.xml");
+            File feedfile3 = new File("feedXML_atom_received.xml");
             if(backupfile.exists()) {
                 backupfile.delete();
                 System.out.println(">> backup.txt has been deleted.");
             }
-            if(feedfile.exists())  {
-                feedfile.delete();
+            if(feedfile1.exists()) {
+                feedfile1.delete();
                 System.out.println(">> feedXML.xml has been deleted.");
+            }
+            if(feedfile2.exists()) {
+                feedfile2.delete();
+                System.out.println(">> feedXML_client.xml has been deleted.");
+            }
+            if(feedfile3.exists()) {
+                feedfile3.delete();
+                System.out.println(">> feedXML_atom_received.xml has been deleted.");
             }
         } catch (Exception e){
             System.out.println("Error in delete files");

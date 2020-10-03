@@ -134,17 +134,20 @@ public class GETClient implements Runnable {
 //        if (xml.substring(0,4).equals("null") ) {
 //                System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
 //        } else {
-            prettyFormat(xml);
+            prettyFormat();
 //        }
         System.out.println("=================================================\n");
     }
 
-    // todo make xml pretty
-    public static void prettyFormat(String input) {
-        if (input.substring(0,4).equals("null") ) {
-            System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
-        } else {
-        System.out.println(input);}
+    // make xml pretty
+    public static void prettyFormat() {
+        String xmlName = "feedXML_client.xml";
+        SaxXml sax = new SaxXml();
+        sax.readXML(xmlName);
+//        if (input.substring(0,4).equals("null") ) {
+//            System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
+//        } else {
+//        System.out.println(input);}
     }
 
     @Override

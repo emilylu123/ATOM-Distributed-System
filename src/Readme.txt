@@ -10,6 +10,42 @@
 This project demonstrates that how to build a simple client/server system,
 by building a simple system that aggregates and distributes ATOM feeds.
 
+A automated testing and one manually testing are provided.
+
+The test file is named as "TesterMultipleServer"
+The port number is set as "4567" as default
+
+//How to run tests
+1. Compile
+    Console Command: javac *.java
+
+2. Run TesterMultipleServer
+	Console Command: java TesterMultipleServer
+
+// How to test manually
+1. Run AggregationServer
+	Console Command: java AggregationServer atom 4567
+
+2.Run ContentServer
+	Console Command:  java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 12
+
+3.Run GETClient
+	Console Command:  java GETClient 0.0.0.0:4567
+
+Checklist
+Basic functionality:
+√ XML parsing works
+√ client, Atom server and content server processes start up and communicate
+√ PUT operation works for one content server
+√ GET operation works for many read clients
+√ Atom server expired feeds works (12s)
+√ Retry on errors (server not available etc) works
+
+Full functionality:
+√ Lamport clocks are implemented
+√ All error codes are implemented: empty XML, malformed XML
+√ Content servers are replicated and fault tolerant
+
 The project has three servers:
     AggregationServer;
     ContentServer;
@@ -29,48 +65,13 @@ AggregationServer has following methods:
 
 ContentServer has following methods:
     PUT();
-    incrementLampoet(int);
+    incrementLamport(int);
     updateLamport(int);
     createNewsFeeds();
     readXML();
 
 GETClient has following methods:
     GET();
-    incrementLampoet();
+    incrementLamport();
     updateLamport(int);
     displayXML();
-
-A automated testing and one manually testing are provided.
-
-The test file is named as "TesterMultipleServer"
-The port number is set as "4567" as default
-
-//How to run tests
-1. Run TesterSingleServer
-	Console Command: java TesterMultipleServer
-
-// How to test manually
-1. Run AggregationServer
-	Console Command: java AggregationServer atom 4567
-
-2.Run ContentServer
-	Console Command:  java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 123
-
-3.Run GETClient
-	Console Command:  java GETClient 0.0.0.0:4567
-
-Checklist
-Basic functionality:
-√  XML parsing works
-√ client, Atom server and content server processes start up and communicate
-√ PUT operation works for one content server
-√ GET operation works for many read clients
-√ Atom server expired feeds works (12s)
-√ Retry on errors (server not available etc) works
-
-Full functionality:
-
-√ Lamport clocks are implemented
-√ All error codes are implemented: empty XML, malformed XML
-√ Content servers are replicated and fault tolerant
-

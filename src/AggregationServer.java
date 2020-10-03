@@ -12,9 +12,6 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.*;
 
-/*todo check replicated feeds (by feed id)
-* todo error codes - empty xml malformed xml
-* */
 public class AggregationServer extends Thread{
     private volatile static int logical_clock = 0;
     protected static ServerSocket serverSocket;
@@ -31,7 +28,7 @@ public class AggregationServer extends Thread{
             System.out.println("Address: "+ serverSocket.getLocalSocketAddress());
             System.out.println("==============================");
 
-            // always check local backupFile (backup.txt) to recover feeds when start ATOM server
+            // always check local backupFile to recover feeds when start ATOM server
             recoverFeeds();
             // start heart beat timer for disconnecting expired feeds (12s)
             timer();
@@ -157,11 +154,11 @@ public class AggregationServer extends Thread{
         System.out.println("ATOM:: Receive [GET] from Client Application");
         System.out.println("********************************************\n");
 
-        // read feeds from local backup.txt file
+        // read feeds from local backup file
         String readBackup = "";
         BufferedReader reader;
         try{
-            File backup = new File ("backup.txt");
+            File backup = new File ("backup.xml");
             if (backup.exists()){
                 reader = new BufferedReader(new FileReader(backup));
                 String line = reader.readLine();
@@ -226,12 +223,12 @@ public class AggregationServer extends Thread{
 
     // recover from backup file and create Feed object  w/ content ID
     protected void recoverFeeds() {
-        String pathname = "backup.txt";
+        String pathname = "backup.xml";
         File backupFile = new File(pathname);
         feedList = new LinkedList<Feed>();
 
         if (!backupFile.exists()){
-            System.out.println("ATOM:: First time start ATOM SERVER. Create empty backup.txt file...");
+            System.out.println("ATOM:: First time start ATOM SERVER. Create empty backup file...");
             try {
                 backupFile.createNewFile();
             } catch (IOException e) {
@@ -331,7 +328,7 @@ public class AggregationServer extends Thread{
 
     // write finalFeeds to local file
     private void backupFeeds (){
-        String fileName = "backup.txt";
+        String fileName = "backup.xml";
         System.out.println("ATOM:: Backup feeds to local file " + fileName);
         String latestFeeds = "";
         for (int i = 0; i < feedList.size(); i++) {
@@ -397,7 +394,7 @@ public class AggregationServer extends Thread{
             bis = new BufferedInputStream(fis);
             bis.read(mybytearray,0,mybytearray.length);
             os = atomSocket.getOutputStream();
-            System.out.println("Content:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
+            System.out.println("ATOM:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
             os.write(mybytearray,0,mybytearray.length);
             os.flush();
         } catch (IOException e) {
@@ -405,7 +402,7 @@ public class AggregationServer extends Thread{
         } finally {
             if (bis != null) bis.close();
             if (os != null) os.close();
-            System.out.println("Content:: XML file is sent.");
+            System.out.println("ATOM:: XML file hss sent to GETClient.");
         }
     }
 }

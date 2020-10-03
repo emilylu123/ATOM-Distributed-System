@@ -10,7 +10,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import static java.io.Console.*;
 
 public class ContentServer extends XMLParser implements Runnable {
     private final static int TRYMAX = 5;  // define reconnect times if connection fails
@@ -85,36 +84,36 @@ public class ContentServer extends XMLParser implements Runnable {
 
     @Override
     public void run() {
-        // read news feed from local file given from commond line and create a XML file
+        // read news feed from local file given from command line and create a XML file
         try {
             //read input file and create a XML file
-            createNewsFeed(inputFile, xmlName);
+            createNewsFeed(inputFile);
 
             // send xml to ATOM server and receiver returned ststus code
             String statusCode = "";
-            statusCode = PUT(xmlName,this.contentServerID);
+            statusCode = PUT(this.contentServerID);
 
             // send feed XML file to ATOM server
             System.out.println("sending XML");
-            sendXML(xmlName);
+            sendXML();
             System.out.println("XML file is sent");
 
             // receive status code and take actions accordingly
             if (statusCode.isEmpty()){
                 System.out.println("Receive no status Code. Content Server will sent PUT request again.");
-                PUT(xmlName,contentServerID);
+                PUT(contentServerID);
             } else if (statusCode.equals("200")) {
                 System.out.println("Content:: Reconnect Successes. PUT request Successes again!");
             } else if (statusCode.equals("201")) {
                 System.out.println("Content:: HTTP_CREATED. PUT request Successes!");
             } else if (statusCode.equals("204")) {
                 System.out.println("Content:: Error: The Feed received from ATOM was empty. Content Server will sent PUT request again.");
-                PUT(xmlName,contentServerID);
+                PUT(contentServerID);
             } else if (statusCode.equals("400")) {
                 System.out.println("Content:: Wrong message");
             } else if (statusCode.equals("500")) {
                 System.out.println("Content::Feeds do not make sense. Content Server will sent PUT request again.");
-                PUT(xmlName,contentServerID);
+                PUT(contentServerID);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -132,17 +131,17 @@ public class ContentServer extends XMLParser implements Runnable {
     }
 
     //read [input.txt] file and create a XML file [feedXML.xml]
-    private void createNewsFeed(String inputName, String xmlName) throws IOException, TransformerConfigurationException {
+    private void createNewsFeed(String inputName) throws IOException, TransformerConfigurationException {
         SaxXml sax = new SaxXml();
         sax.parsingXML(inputName, xmlName);
     }
 
-    private String PUT (String xmlName, String id) throws IOException {
+    private String PUT(String id) throws IOException {
         DataInputStream inContent = new DataInputStream(contentSocket.getInputStream());
         DataOutputStream outContent = new DataOutputStream(contentSocket.getOutputStream());
 
         // read feed XML file and format it as a String
-        String newsFeed = readXML(xmlName);
+        String newsFeed = readXML();
         String type = "XML";
         int length = newsFeed.length();
 
@@ -171,7 +170,7 @@ public class ContentServer extends XMLParser implements Runnable {
     }
 
     // read XML file and return a string in the correct format
-    private String readXML (String xmlName) {
+    private String readXML () {
         String readXML = "";
         BufferedReader reader;
         try{
@@ -188,7 +187,9 @@ public class ContentServer extends XMLParser implements Runnable {
         return readXML;
     }
 
-    private void sendXML(String xmlName) throws IOException {
+
+    // send xml file as a feed to ATOM server
+    private void sendXML() throws IOException {
         FileInputStream fis = null;
         BufferedInputStream bis = null;
         OutputStream os = null;
