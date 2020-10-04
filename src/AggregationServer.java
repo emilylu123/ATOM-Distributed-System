@@ -76,6 +76,7 @@ public class AggregationServer extends Thread{
 
             // read keyword to process PUT and GET requests.
             String keyword = inMSG.substring(0,3);
+            XMLParser parser = new XMLParser();
             // PUT request from Content server, update heartbeat test and process news feeds, return status code
             if (keyword.equals("PUT")){
                 String contentServerID = "";
@@ -85,7 +86,7 @@ public class AggregationServer extends Thread{
                 outATOM.writeUTF(outMSG);
                 System.out.println("ATOM:: Send Status Code to Content Server: " + outMSG);
 
-                receiveXML();
+                parser.receiveXML("feedXML_atom_received.xml",atomSocket);
                 System.out.println("ATOM:: Receive a feed from content server: " + contentServerID);
             }
 
@@ -93,7 +94,6 @@ public class AggregationServer extends Thread{
             else if (keyword.equals("GET")){
                 String outMSG = processGET();
                 outATOM.writeUTF(outMSG);
-                sendXML();
             }
             // Process illegal request by sending error status code 400
             else {
@@ -149,31 +149,23 @@ public class AggregationServer extends Thread{
     }
 
     // get feeds from backup file
-    protected String processGET(){
+    protected String processGET() throws IOException {
         System.out.println("\n********************************************");
         System.out.println("ATOM:: Receive [GET] from Client Application");
         System.out.println("********************************************\n");
 
         // read feeds from local backup file
         String readBackup = "";
-        BufferedReader reader;
-        try{
-            File backup = new File ("backup.xml");
-            if (backup.exists()){
-                reader = new BufferedReader(new FileReader(backup));
-                String line = reader.readLine();
-                do{
-                    readBackup += line + "\n";
-                    line = reader.readLine();
-                }  while (line != null);
-                reader.close();
-                readBackup += "@" + logical_clock;
-                System.out.println("ATOM:: Send News Feeds to Client.\nATOM:: Update Lamport TimeStamp: " + logical_clock);
-            } else {
-                System.out.println("ATOM:: Error! Backup file is not available");
-            }
-        } catch (IOException e){
-            e.printStackTrace();
+        String FILE_TO_SEND = "backup.xml";
+        File backup = new File (FILE_TO_SEND);
+        if (backup.exists()){
+            readBackup = String.valueOf(logical_clock);
+            // Send XML file to client
+            XMLParser parser = new XMLParser();
+            parser.sendXML(FILE_TO_SEND,atomSocket);
+            System.out.println("ATOM:: Send News Feeds to Client.\nATOM:: Update Lamport TimeStamp: " + readBackup);
+        } else {
+            System.out.println("ATOM:: Error! Feeds file is not available");
         }
         return readBackup;
     }
@@ -223,8 +215,8 @@ public class AggregationServer extends Thread{
 
     // recover from backup file and create Feed object  w/ content ID
     protected void recoverFeeds() {
-        String pathname = "backup.xml";
-        File backupFile = new File(pathname);
+        String FILE_TO_RECOVER = "backup.xml";
+        File backupFile = new File(FILE_TO_RECOVER);
         feedList = new LinkedList<Feed>();
 
         if (!backupFile.exists()){
@@ -348,61 +340,61 @@ public class AggregationServer extends Thread{
         System.out.println("ATOM:: Backup file is done: " + fileName);
     }
 
-    private void receiveXML() throws IOException {
-        int bytesRead;
-        int current = 0;
-        FileOutputStream fos = null;
-        BufferedOutputStream bos = null;
-        String FILE_TO_RECEIVED = "feedXML_atom_received.xml";
+//    private void receiveXML() throws IOException {
+//        int bytesRead;
+//        int current = 0;
+//        FileOutputStream fos = null;
+//        BufferedOutputStream bos = null;
+//        String FILE_TO_RECEIVED = "feedXML_atom_received.xml";
+//
+//        System.out.println("ATOM:: receiving XML file");// receive file
+//        int FILE_SIZE = 102400;
+//        byte[] mybytearray = new byte[FILE_SIZE];
+//
+//        InputStream is = atomSocket.getInputStream();
+//
+//        fos = new FileOutputStream(FILE_TO_RECEIVED);
+//        bos = new BufferedOutputStream(fos);
+//        bytesRead = is.read(mybytearray, 0, mybytearray.length);
+//        current = bytesRead;
+//
+//        do {
+//            bytesRead =
+//                    is.read(mybytearray, current, (mybytearray.length - current));
+//            if (bytesRead >= 0) current += bytesRead;
+//        } while (bytesRead > -1);
+//
+//        bos.write(mybytearray, 0, current);
+//        bos.flush();
+//        System.out.println("ATOM:: File " + FILE_TO_RECEIVED
+//                + " downloaded (" + current + " bytes read)");
+//
+//        if (fos != null) fos.close();
+//        if (bos != null) bos.close();
+//    }
 
-        System.out.println("ATOM:: receiving XML file");// receive file
-        int FILE_SIZE = 102400;
-        byte[] mybytearray = new byte[FILE_SIZE];
-
-        InputStream is = atomSocket.getInputStream();
-
-        fos = new FileOutputStream(FILE_TO_RECEIVED);
-        bos = new BufferedOutputStream(fos);
-        bytesRead = is.read(mybytearray, 0, mybytearray.length);
-        current = bytesRead;
-
-        do {
-            bytesRead =
-                    is.read(mybytearray, current, (mybytearray.length - current));
-            if (bytesRead >= 0) current += bytesRead;
-        } while (bytesRead > -1);
-
-        bos.write(mybytearray, 0, current);
-        bos.flush();
-        System.out.println("ATOM:: File " + FILE_TO_RECEIVED
-                + " downloaded (" + current + " bytes read)");
-
-        if (fos != null) fos.close();
-        if (bos != null) bos.close();
-    }
-
-    private void sendXML() throws IOException {
-        FileInputStream fis = null;
-        BufferedInputStream bis = null;
-        OutputStream os = null;
-        String FILE_TO_SEND = "feedXML_atom_received.xml";
-        try {
-            // send file
-            File myFile = new File (FILE_TO_SEND);
-            byte [] mybytearray  = new byte [(int)myFile.length()];
-            fis = new FileInputStream(myFile);
-            bis = new BufferedInputStream(fis);
-            bis.read(mybytearray,0,mybytearray.length);
-            os = atomSocket.getOutputStream();
-            System.out.println("ATOM:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
-            os.write(mybytearray,0,mybytearray.length);
-            os.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (bis != null) bis.close();
-            if (os != null) os.close();
-            System.out.println("ATOM:: XML file hss sent to GETClient.");
-        }
-    }
+//    private void sendXML() throws IOException {
+//        FileInputStream fis = null;
+//        BufferedInputStream bis = null;
+//        OutputStream os = null;
+//        String FILE_TO_SEND = "backup.xml";
+//        try {
+//            // send file
+//            File myFile = new File (FILE_TO_SEND);
+//            byte [] mybytearray  = new byte [(int)myFile.length()];
+//            fis = new FileInputStream(myFile);
+//            bis = new BufferedInputStream(fis);
+//            bis.read(mybytearray,0,mybytearray.length);
+//            os = atomSocket.getOutputStream();
+//            System.out.println("ATOM:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
+//            os.write(mybytearray,0,mybytearray.length);
+//            os.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (bis != null) bis.close();
+//            if (os != null) os.close();
+//            System.out.println("ATOM:: XML file hss sent to GETClient.");
+//        }
+//    }
 }

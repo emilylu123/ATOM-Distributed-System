@@ -30,14 +30,14 @@ public class TesterMultipleServer implements Runnable {
         // test begins
         try {
 
-            System.out.println("**************** Tests start ****************\n");
+            System.out.println("**************** Tests start ****************");
             // 1. start content server 1 when ATOM server is offline, it will reconnect 5 times
-            System.out.println("\n>> TEST 1 :: Start Content Server (ID:12) & send PUT request\n>> Expect :: Connection Failure occurred and Reconnect\n");
+            System.out.println("\n>> TEST 1 :: Start Content Server (ID:12) & send PUT request\n>> Expect :: Connection Failure occurred and Reconnect in adaptive time\n");
             content1.start();
             Thread.sleep(2750);
 
             // 2.Get client 1 before start ATOM server, reconnect 5 times
-            System.out.println("\n>> TEST 2 :: Start GETclient 1 & send GET request\n>> Expect :: Connection Failure Occurred and Reconnect\n");
+            System.out.println("\n>> TEST 2 :: Start GETclient 1 & send GET request\n>> Expect :: Connection Failure Occurred and Reconnect in adaptive time\n");
             client1.start();
             Thread.sleep(1500);
 

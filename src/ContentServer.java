@@ -11,7 +11,7 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 
-public class ContentServer extends XMLParser implements Runnable {
+public class ContentServer implements Runnable {
     private final static int TRYMAX = 5;  // define reconnect times if connection fails
     private static int tryCount = 0;
     protected static Socket contentSocket;
@@ -71,7 +71,7 @@ public class ContentServer extends XMLParser implements Runnable {
         else inputFile = "input.txt";
 
         if (args.length > 2 )  xmlName = args[2];
-        else xmlName = "feedXML.xml";
+        else xmlName = "feedXML_content.xml";
 
         if (args.length > 3) contentServerID = args[3];
         else contentServerID = "unknown";
@@ -95,7 +95,8 @@ public class ContentServer extends XMLParser implements Runnable {
 
             // send feed XML file to ATOM server
             System.out.println("sending XML");
-            sendXML();
+            XMLParser parser = new XMLParser();
+            parser.sendXML(xmlName,contentSocket);
             System.out.println("XML file is sent");
 
             // receive status code and take actions accordingly
@@ -130,10 +131,10 @@ public class ContentServer extends XMLParser implements Runnable {
         logical_clock = Math.max(logical_clock, timestamp) + 1;
     }
 
-    //read [input.txt] file and create a XML file [feedXML.xml]
+    //read [input.txt] file and create a XML file [feedXML_content.xml]
     private void createNewsFeed(String inputName) throws IOException, TransformerConfigurationException {
-        SaxXml sax = new SaxXml();
-        sax.parsingXML(inputName, xmlName);
+        XMLParser parser = new XMLParser();
+        parser.parsingXML(inputName, xmlName);
     }
 
     private String PUT(String id) throws IOException {
@@ -141,7 +142,8 @@ public class ContentServer extends XMLParser implements Runnable {
         DataOutputStream outContent = new DataOutputStream(contentSocket.getOutputStream());
 
         // read feed XML file and format it as a String
-        String newsFeed = readXML();
+        XMLParser parser = new XMLParser();
+        String newsFeed = parser.readXML(xmlName);
         String type = "XML";
         int length = newsFeed.length();
 
@@ -170,47 +172,47 @@ public class ContentServer extends XMLParser implements Runnable {
     }
 
     // read XML file and return a string in the correct format
-    private String readXML () {
-        String readXML = "";
-        BufferedReader reader;
-        try{
-            reader = new BufferedReader(new FileReader(xmlName));
-            String line = reader.readLine();;
-            do{
-                readXML += line + "\n";
-                line = reader.readLine();
-            }  while (line != null);
-            reader.close();
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-        return readXML;
-    }
+//    private String readXML () {
+//        String readXML = "";
+//        BufferedReader reader;
+//        try{
+//            reader = new BufferedReader(new FileReader(xmlName));
+//            String line = reader.readLine();;
+//            do{
+//                readXML += line + "\n";
+//                line = reader.readLine();
+//            }  while (line != null);
+//            reader.close();
+//        } catch (IOException e){
+//            e.printStackTrace();
+//        }
+//        return readXML;
+//    }
 
 
     // send xml file as a feed to ATOM server
-    private void sendXML() throws IOException {
-        FileInputStream fis = null;
-        BufferedInputStream bis = null;
-        OutputStream os = null;
-        try {
-            // send file
-            File myFile = new File (xmlName);
-            byte [] mybytearray  = new byte [(int)myFile.length()];
-            fis = new FileInputStream(myFile);
-            bis = new BufferedInputStream(fis);
-            bis.read(mybytearray,0,mybytearray.length);
-            os = contentSocket.getOutputStream();
-            System.out.println("Content:: Sending " + xmlName + "(" + mybytearray.length + " bytes)");
-            os.write(mybytearray,0,mybytearray.length);
-            os.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (bis != null) bis.close();
-            if (os != null) os.close();
-            System.out.println("Content:: XML file is sent.");
-        }
-    }
+//    private void sendXML() throws IOException {
+//        FileInputStream fis = null;
+//        BufferedInputStream bis = null;
+//        OutputStream os = null;
+//        try {
+//            // send file
+//            File myFile = new File (xmlName);
+//            byte [] mybytearray  = new byte [(int)myFile.length()];
+//            fis = new FileInputStream(myFile);
+//            bis = new BufferedInputStream(fis);
+//            bis.read(mybytearray,0,mybytearray.length);
+//            os = contentSocket.getOutputStream();
+//            System.out.println("Content:: Sending " + xmlName + "(" + mybytearray.length + " bytes)");
+//            os.write(mybytearray,0,mybytearray.length);
+//            os.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (bis != null) bis.close();
+//            if (os != null) os.close();
+//            System.out.println("Content:: XML file is sent.");
+//        }
+//    }
 }
 

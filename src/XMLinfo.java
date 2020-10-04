@@ -6,8 +6,6 @@
 // Year: 2020
 // Assignment2: ATOM feeds aggregation and distribution system
 //==============================================================
-import java.util.*;
-import java.io.*;
 
 public class XMLinfo {
     private String title;

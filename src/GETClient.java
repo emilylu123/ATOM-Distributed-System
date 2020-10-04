@@ -24,16 +24,14 @@ public class GETClient implements Runnable {
     private static final int TRYMAX = 5;
     private static int tryCount = 0;
     private static Socket clientSocket;
-    private static int logical_clock = (int)Math.random()*100+22;
-    private static String serverName ;
+    private static int logical_clock = (int)(Math.random()*100+22);
+    private static String serverName;
     private static int portNumber;
 
-    public GETClient (String serverName, int portNumber){
-        this.serverName = serverName ;
-        this.portNumber = portNumber ;
+    public GETClient (){
         while(tryCount<TRYMAX){
             try {
-                clientSocket = new Socket(this.serverName,this.portNumber);
+                clientSocket = new Socket(serverName,portNumber);
                 System.out.println("================================");
                 System.out.println("GetClient Application is ready! ");
                 System.out.println("================================");
@@ -46,13 +44,12 @@ public class GETClient implements Runnable {
                     System.out.println("GETClient Connection failed. Reconnect in " + tryCount + "s");
                     System.out.println("============================================");
                     System.out.println("GETClient Reconnecting: " + tryCount + " time\n");
-                    Thread.sleep(tryCount*1000);
+                    Thread.sleep(tryCount * 1000); // retry in adaptive time n seconds
                     if (tryCount == TRYMAX){
                         System.out.println("===============================================");
                         System.out.println("ATOM Server is offline. Please come back later.");
                         System.out.println("===============================================");
                     }
-                    continue;
                 } catch (InterruptedException interruptedException) {
                     interruptedException.printStackTrace();
                 }
@@ -63,7 +60,7 @@ public class GETClient implements Runnable {
     }
 
     // "servername:portnumber"
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // The server program creates the ServerSocket object in a try-with-resources statement:
         if (args.length==0){
             serverName = "0.0.0.0";
@@ -81,7 +78,7 @@ public class GETClient implements Runnable {
         }
 
         // create a new get thread to run this get client application
-        GETClient client = new GETClient(serverName,portNumber);
+        GETClient client = new GETClient();
         Thread getThread = new Thread(client);
         getThread.start();
     }
@@ -96,8 +93,8 @@ public class GETClient implements Runnable {
 
     // send GET request with timestamp
     private void GET () {
-        DataInputStream inGET = null;
-        DataOutputStream outGET = null;
+        DataInputStream inGET;
+        DataOutputStream outGET;
         try {
             inGET = new DataInputStream(clientSocket.getInputStream());
             outGET = new DataOutputStream(clientSocket.getOutputStream());
@@ -108,20 +105,20 @@ public class GETClient implements Runnable {
             incrementLamport();
 
             // receive news from ATOM server and update timestamp
-            String news = inGET.readUTF();
-            receiveXML();
-            if (!news.isEmpty()) {
-                String[] arr = news.split("@");
-                String xml = arr[0];
+            String inMSG = inGET.readUTF();
+            XMLParser parser = new XMLParser();
+            String FILE_TO_RECEIVED = "feedXML_client.xml";
+            parser.receiveXML(FILE_TO_RECEIVED, clientSocket);
 
-                int timestamp = Integer.parseInt(arr[1]);
-                updateLamport(timestamp);
-
-                // display news if it is not empty and then increment Lamport timestamp
-                displayXML(xml);
-                incrementLamport();
-            } else {
+            BufferedReader br = new BufferedReader(new FileReader(FILE_TO_RECEIVED));
+            if (br.readLine() == null) {
                 System.out.println("GETClient:: News feed is EMPTY. Please try later. \n");
+            } else {
+                int timestamp = Integer.parseInt(inMSG);
+                updateLamport(timestamp);
+                // display news if it is not empty and then increment Lamport timestamp
+                displayXML();
+                incrementLamport();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -129,62 +126,17 @@ public class GETClient implements Runnable {
     }
 
     // display XML in a pretty format
-    private void displayXML (String xml) {
+    private void displayXML () {
         System.out.println("============ GET Client:: Display News ==========");
-//        if (xml.substring(0,4).equals("null") ) {
-//                System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
-//        } else {
-            prettyFormat();
-//        }
-        System.out.println("=================================================\n");
-    }
-
-    // make xml pretty
-    public static void prettyFormat() {
         String xmlName = "feedXML_client.xml";
-        SaxXml sax = new SaxXml();
-        sax.readXML(xmlName);
-//        if (input.substring(0,4).equals("null") ) {
-//            System.out.println("GETClient:: News feed is EMPTY. Please come back later! ");
-//        } else {
-//        System.out.println(input);}
+        XMLParser parser = new XMLParser();
+        parser.readXML(xmlName);
+        System.out.println("=================================================\n");
     }
 
     @Override
     public void run() {
         GET();
-    }
-
-    private void receiveXML() throws IOException {
-        int bytesRead;
-        int current = 0;
-        FileOutputStream fos = null;
-        BufferedOutputStream bos = null;
-        String FILE_TO_RECEIVED = "feedXML_client.xml";
-
-        System.out.println("GETClient:: receiving XML file");// receive file
-        int FILE_SIZE = 102400;
-        byte[] mybytearray = new byte[FILE_SIZE];
-
-        InputStream is = clientSocket.getInputStream();
-        fos = new FileOutputStream(FILE_TO_RECEIVED);
-        bos = new BufferedOutputStream(fos);
-        bytesRead = is.read(mybytearray, 0, mybytearray.length);
-        current = bytesRead;
-
-        do {
-            bytesRead =
-                    is.read(mybytearray, current, (mybytearray.length - current));
-            if (bytesRead >= 0) current += bytesRead;
-        } while (bytesRead > -1);
-
-        bos.write(mybytearray, 0, current);
-        bos.flush();
-        System.out.println("GETClient:: File " + FILE_TO_RECEIVED
-                + " downloaded (" + current + " bytes read)");
-
-        if (fos != null) fos.close();
-        if (bos != null) bos.close();
     }
 }
 
