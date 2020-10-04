@@ -149,7 +149,7 @@ public class AggregationServer extends Thread{
     }
 
     // get feeds from backup file
-    protected String processGET() throws IOException {
+    protected String processGET() {
         System.out.println("\n********************************************");
         System.out.println("ATOM:: Receive [GET] from Client Application");
         System.out.println("********************************************\n");
@@ -158,11 +158,17 @@ public class AggregationServer extends Thread{
         String readBackup = "";
         String FILE_TO_SEND = "backup.xml";
         File backup = new File (FILE_TO_SEND);
+        System.out.println(backup.exists());
         if (backup.exists()){
             readBackup = String.valueOf(logical_clock);
             // Send XML file to client
             XMLParser parser = new XMLParser();
-            parser.sendXML(FILE_TO_SEND,atomSocket);
+            try {
+                parser.sendXML(FILE_TO_SEND,atomSocket);
+            } catch (IOException e) {
+                System.out.println("ATOM:: Error! Feeds file is not available");
+                e.printStackTrace();
+            }
             System.out.println("ATOM:: Send News Feeds to Client.\nATOM:: Update Lamport TimeStamp: " + readBackup);
         } else {
             System.out.println("ATOM:: Error! Feeds file is not available");

@@ -15,7 +15,6 @@ public class ContentServer implements Runnable {
     private final static int TRYMAX = 5;  // define reconnect times if connection fails
     private static int tryCount = 0;
     protected static Socket contentSocket;
-    private static ContentServer content;
     private static int logical_clock = (int) (Math.random()*100);
     private static String inputFile;
     private static String xmlName;
@@ -23,18 +22,15 @@ public class ContentServer implements Runnable {
     private static String serverName ;
     private static int portNumber;
 
-    public ContentServer (String serverName, int portNumber, String id){
-        this.serverName = serverName ;
-        this.portNumber = portNumber ;
-        this.contentServerID = id ;
+    private boolean Connect() {
         while(tryCount<TRYMAX){
             try {
-                contentSocket = new Socket(this.serverName,this.portNumber);
+                contentSocket = new Socket(serverName,portNumber);
                 System.out.println("================================");
-                System.out.println("Content Server [ID " + this.contentServerID +"] is ready! ");
-                System.out.println("Address: "+ this.contentSocket.getLocalSocketAddress()+"\nLocal time: " + logical_clock);
+                System.out.println("Content Server [ID " + contentServerID +"] is ready! ");
+                System.out.println("Address: "+ contentSocket.getLocalSocketAddress()+"\nLocal time: " + logical_clock);
                 System.out.println("================================");
-                break;
+                return true;
             } catch (ConnectException e) {
                 try {
                     tryCount++;
@@ -48,7 +44,6 @@ public class ContentServer implements Runnable {
                         System.out.println("ATOM Server is offline. Please come back later.");
                         System.out.println("===============================================");
                     }
-                    continue;
                 } catch (InterruptedException interruptedException) {
                     interruptedException.printStackTrace();
                 }
@@ -56,6 +51,7 @@ public class ContentServer implements Runnable {
                 e.printStackTrace();
             }
         }
+        return false;
     }
 
     public static void main(String[] args) {
@@ -77,9 +73,12 @@ public class ContentServer implements Runnable {
         else contentServerID = "unknown";
 
         // create a new put thread to run this content sever
-        content = new ContentServer(serverName, portNumber, contentServerID);
-        Thread putThread = new Thread(content);
-        putThread.start();
+        ContentServer content = new ContentServer();
+        boolean success = content.Connect();
+        if (success){
+            Thread putThread = new Thread(content);
+            putThread.start();
+        }
     }
 
     @Override
@@ -90,8 +89,8 @@ public class ContentServer implements Runnable {
             createNewsFeed(inputFile);
 
             // send xml to ATOM server and receiver returned ststus code
-            String statusCode = "";
-            statusCode = PUT(this.contentServerID);
+            String statusCode;
+            statusCode = PUT(contentServerID);
 
             // send feed XML file to ATOM server
             System.out.println("sending XML");
@@ -116,9 +115,7 @@ public class ContentServer implements Runnable {
                 System.out.println("Content::Feeds do not make sense. Content Server will sent PUT request again.");
                 PUT(contentServerID);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TransformerConfigurationException e) {
+        } catch (IOException | TransformerConfigurationException e) {
             e.printStackTrace();
         }
     }
@@ -170,49 +167,5 @@ public class ContentServer implements Runnable {
         System.out.println("Content:: Receive Status Code ["+ statusCode + "] @ time " + logical_clock);
         return statusCode;
     }
-
-    // read XML file and return a string in the correct format
-//    private String readXML () {
-//        String readXML = "";
-//        BufferedReader reader;
-//        try{
-//            reader = new BufferedReader(new FileReader(xmlName));
-//            String line = reader.readLine();;
-//            do{
-//                readXML += line + "\n";
-//                line = reader.readLine();
-//            }  while (line != null);
-//            reader.close();
-//        } catch (IOException e){
-//            e.printStackTrace();
-//        }
-//        return readXML;
-//    }
-
-
-    // send xml file as a feed to ATOM server
-//    private void sendXML() throws IOException {
-//        FileInputStream fis = null;
-//        BufferedInputStream bis = null;
-//        OutputStream os = null;
-//        try {
-//            // send file
-//            File myFile = new File (xmlName);
-//            byte [] mybytearray  = new byte [(int)myFile.length()];
-//            fis = new FileInputStream(myFile);
-//            bis = new BufferedInputStream(fis);
-//            bis.read(mybytearray,0,mybytearray.length);
-//            os = contentSocket.getOutputStream();
-//            System.out.println("Content:: Sending " + xmlName + "(" + mybytearray.length + " bytes)");
-//            os.write(mybytearray,0,mybytearray.length);
-//            os.flush();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (bis != null) bis.close();
-//            if (os != null) os.close();
-//            System.out.println("Content:: XML file is sent.");
-//        }
-//    }
 }
 

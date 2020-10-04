@@ -28,15 +28,14 @@ public class GETClient implements Runnable {
     private static String serverName;
     private static int portNumber;
 
-    public GETClient (){
+    private boolean Connect() {
         while(tryCount<TRYMAX){
             try {
                 clientSocket = new Socket(serverName,portNumber);
                 System.out.println("================================");
                 System.out.println("GetClient Application is ready! ");
                 System.out.println("================================");
-                // GET();
-                break;
+                return true;
             } catch (ConnectException e) {
                 try {
                     tryCount++;
@@ -57,6 +56,7 @@ public class GETClient implements Runnable {
                 e.printStackTrace();
             }
         }
+        return false;
     }
 
     // "servername:portnumber"
@@ -79,8 +79,11 @@ public class GETClient implements Runnable {
 
         // create a new get thread to run this get client application
         GETClient client = new GETClient();
-        Thread getThread = new Thread(client);
-        getThread.start();
+        boolean success = client.Connect();
+        if (success){
+            Thread getThread = new Thread(client);
+            getThread.start();
+        }
     }
 
     private void incrementLamport (){
@@ -121,7 +124,7 @@ public class GETClient implements Runnable {
                 incrementLamport();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("ATOM Server is not available.");
         }
     }
 

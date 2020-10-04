@@ -13,7 +13,7 @@ public class TesterMultipleServer implements Runnable {
 
     private static final int portNumber = 4567; // by default
     private static final String serverName = "0.0.0.0";
-    static Thread content1, content2, content3, client1, client2, client3;
+    static Thread content1, content2, content3, client1, client2, client3, client4;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         // create new TesterSingleServer object
@@ -63,12 +63,16 @@ public class TesterMultipleServer implements Runnable {
             // PUT from content server 1 again
             System.out.println("\n>> TEST 7 ::Start Content Server (ID:22) & send PUT request\n>> Expect :: PUT successful\n");
             content3.start();
-            Thread.sleep(13000);
-
+            Thread.sleep(5000);
 
             // Get from client 3, xml should be empty
-            System.out.println("\n>> TEST 8 :: GET from client 3 (after all feeds expired)\n>> Expect :: Receive 0 feeds from ATOM\n");
+            System.out.println("\n>> TEST 8 :: GET from client 3 \n>> Expect :: Receive feeds from ATOM\n");
             client3.start();
+            Thread.sleep(8000);
+
+            // Get from client 3, xml should be empty
+            System.out.println("\n>> TEST 9 :: GET from client 4 (after all feeds expired)\n>> Expect :: Receive 0 feeds from ATOM\n");
+            client4.start();
             Thread.sleep(3000);
 
             System.out.println("\n>> All TESTS are finished.\n>> Please check results.\n");
@@ -125,6 +129,12 @@ public class TesterMultipleServer implements Runnable {
         };
 
         client3 = new Thread(){
+            @Override
+            public void run(){
+                runCommand ("java GETClient 0.0.0.0:4567");
+            }
+        };
+        client4 = new Thread(){
             @Override
             public void run(){
                 runCommand ("java GETClient 0.0.0.0:4567");
