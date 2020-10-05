@@ -92,11 +92,11 @@ public class ContentServer implements Runnable {
             String statusCode;
             statusCode = PUT(contentServerID);
 
-            // send feed XML file to ATOM server
-            System.out.println("sending XML");
-            XMLParser parser = new XMLParser();
-            parser.sendXML(xmlName,contentSocket);
-            System.out.println("XML file is sent");
+//            // send feed XML file to ATOM server
+//            System.out.println("sending XML");
+//            XMLParser parser = new XMLParser();
+//            parser.sendXML(xmlName,contentSocket);
+//            System.out.println("XML file is sent");
 
             // receive status code and take actions accordingly
             if (statusCode.isEmpty()){
@@ -149,15 +149,18 @@ public class ContentServer implements Runnable {
 
         String putMSG = header + newsFeed + "@" + logical_clock + "@" +id;
 
+        // send feed XML file to ATOM server
+
         // send to ATOM server + timestamp+1
         outContent.writeUTF(putMSG);
 
-        System.out.println("Content:: Send a new feed to ATOM Server");
+        parser.sendXML(xmlName,contentSocket);
+        System.out.println("Content:: A new feed has been sent to ATOM Server");
 
         incrementLamport();
 
         // get status code from ATOM server
-        String inMSG = inContent.readUTF();
+        String inMSG = inContent.readUTF(); //todo
         String[] array = inMSG.split("@");
         String statusCode = array[0];
         int timestamp = Integer.parseInt(array[1]);
@@ -168,4 +171,3 @@ public class ContentServer implements Runnable {
         return statusCode;
     }
 }
-

@@ -92,7 +92,7 @@ public class TesterMultipleServer implements Runnable {
         content1 = new Thread(){
             @Override
             public void run(){
-                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 12");
+                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML_content.xml 12");
             }
         };
 
@@ -100,7 +100,7 @@ public class TesterMultipleServer implements Runnable {
         content2 = new Thread(){
             @Override
             public void run(){
-                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 12");
+                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML_content.xml 12");
             }
         };
 
@@ -108,7 +108,7 @@ public class TesterMultipleServer implements Runnable {
         content3 = new Thread(){
             @Override
             public void run(){
-                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 22");
+                runCommand ("java ContentServer 0.0.0.0:4567 input.txt feedXML_content.xml 22");
             }
         };
 

@@ -30,7 +30,7 @@ class XMLParser extends DefaultHandler {
 
     @Override
     public void startDocument() {
-        System.out.println("----Start parsing XML Feed Document-------");
+        System.out.println("------Start parsing XML Feed Document-------");
     }
 
     @Override
@@ -40,7 +40,7 @@ class XMLParser extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) {
-        System.out.println(tag + new String(ch, start, length));
+        System.out.print(tag + new String(ch, start, length));
     }
     @Override
     public void endElement(String uri, String localName, String qName) {
@@ -49,15 +49,15 @@ class XMLParser extends DefaultHandler {
 
     @Override
     public void endDocument() {
-        System.out.println("----XML Document parsing finished-----\n");
+        System.out.println("----XML Document parsing End-----\n");
     }
 
     public void parsingXML(String inputName, String xmlName) throws IOException, TransformerConfigurationException {
-        readFile(inputName);
+        readInput (inputName);
         createXml(xmlName);
     }
 
-    void readFile(String inputName) throws TransformerConfigurationException, IOException {
+    void readInput(String inputName) {
         System.out.println("XML Parser :: Reading Input File...");
         BufferedReader reader;
         try{
@@ -89,6 +89,32 @@ class XMLParser extends DefaultHandler {
         }
     }
 
+    String readFile(String fileName)  {
+        String readContent = "";
+        File file = new File (fileName);
+        List<String> list = new LinkedList<String>();
+        BufferedReader reader;
+
+        System.out.println("XML Parser:: Reading File...");
+        try{
+            if(!file.exists()){
+                System.out.println ("XML:: File is not exist.");
+                file.createNewFile();
+            } else {
+                reader = new BufferedReader(new FileReader(fileName));
+                String line = reader.readLine();
+                while((line = reader.readLine()) != null) {
+                    readContent += line + "\n";
+                }
+                reader.close();
+            }
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+        return readContent;
+    }
+
     // generate xml file
     static void createXml(String xmlName) throws TransformerConfigurationException, IOException {
         System.out.println("XML Parser :: Creating Feed XML file...");
@@ -102,13 +128,14 @@ class XMLParser extends DefaultHandler {
             tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             tr.setOutputProperty(OutputKeys.INDENT, "yes");
 
-            File f = new File(xmlName);
-            if(!f.exists()){
-                f.createNewFile();
+            File file = new File(xmlName);
+
+            if(!file.exists()){
+                file.createNewFile();
             }
 
-            Result result = new StreamResult(new FileOutputStream(f));
-            // ser result to handler
+            Result result = new StreamResult(new FileOutputStream(file));
+            // set, result to handler
             handler.setResult(result);
 
             // open document
@@ -174,16 +201,15 @@ class XMLParser extends DefaultHandler {
             // close document
             handler.endDocument();
             System.out.println("XML :: XML File is successfully created");
-        } catch (SAXException saxException) {
+        } catch (Exception saxException) {
             saxException.printStackTrace();
-            System.out.println("XML :: Error: XML File creating is failed");
-        } catch (Exception e) {
-            e.printStackTrace();
             System.out.println("XML :: Error: XML File creating is failed");
         }
     }
 
     String readXML(String xmlName){
+        System.out.println ("XML:: Reading File " + xmlName );
+
         String readxml = "";
         BufferedReader reader;
         try{
@@ -202,63 +228,58 @@ class XMLParser extends DefaultHandler {
 
         try{
             SAXParser sax = spf.newSAXParser() ;
-            InputStream is = getStringStream( readxml );
+            InputStream is = getstringstream ( readxml );
             if(is == null)
-                System.out.println("The XML file is empty.");
+                System.out.println("XML Parser:: The XML file is empty.");
             else {
-                System.out.println("Parsing in XML Parser Parser");
+                System.out.println("XML Parser:: Parsing XML file "+ xmlName);
                 sax.parse(is, new XMLParser());
             }
-        }catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
         }
 
+        System.out.println ("<<<<<<"+readxml +">>>>>>" );
         return readxml;
     }
 
-    InputStream getStringStream(String xml) {
+    InputStream getstringstream(String xml) {
         if (xml != null && !xml.trim().equals("")) {
             try {
-                ByteArrayInputStream xmlStream = new ByteArrayInputStream(xml.getBytes());
-                return xmlStream;
+                return new ByteArrayInputStream(xml.getBytes());
             }catch (Exception ex){
-                System.out.println("something wrong happened.");;
+                System.out.println("XML Parser: Error in InputStream.");;
             }
         }
         return null;
     }
 
     void receiveXML(String FILE_TO_RECEIVED, Socket a_socket) throws IOException {
+        System.out.println ("XML Parser:: receive XML file " + FILE_TO_RECEIVED);
         int bytesRead;
         int current = 0;
         FileOutputStream fos = null;
         BufferedOutputStream bos = null;
 
-        int FILE_SIZE = 102400;
-        byte[] mybytearray = new byte[FILE_SIZE];
+        int FILE_SIZE = 10240000;
+        byte[] bt = new byte[FILE_SIZE];
 
-        InputStream is = a_socket.getInputStream();
-
+        InputStream is = null;
+        is = a_socket.getInputStream();
         fos = new FileOutputStream(FILE_TO_RECEIVED);
         bos = new BufferedOutputStream(fos);
-        bytesRead = is.read(mybytearray, 0, mybytearray.length);
+        bytesRead = is.read(bt, 0, bt.length);
         current = bytesRead;
 
         do {
-            bytesRead =
-                    is.read(mybytearray, current, (mybytearray.length - current));
+            bytesRead = is.read(bt, current, (bt.length - current));
             if (bytesRead >= 0) current += bytesRead;
         } while (bytesRead > -1);
 
-        bos.write(mybytearray, 0, current);
+        bos.write(bt, 0, current);
         bos.flush();
-        System.out.println("XML:: File " + FILE_TO_RECEIVED
+
+        System.out.println("XML Parser:: File " + FILE_TO_RECEIVED
                 + " downloaded (" + current + " bytes read)");
 
         if (fos != null) fos.close();

@@ -27,7 +27,7 @@ The port number is set as "4567" as default
 	Console Command: java AggregationServer atom 4567
 
 2.Run ContentServer
-	Console Command:  java ContentServer 0.0.0.0:4567 input.txt feedXML.xml 12
+	Console Command:  java ContentServer 0.0.0.0:4567 input.txt feedXML_content.xml 12
 
 3.Run GETClient
 	Console Command:  java GETClient 0.0.0.0:4567

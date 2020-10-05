@@ -6,6 +6,7 @@
 // Year: 2020
 // Assignment2: ATOM feeds aggregation and distribution system
 //==============================================================
+import javax.xml.transform.TransformerConfigurationException;
 import java.io.*;
 import java.net.*;
 import java.net.Socket;
@@ -33,7 +34,6 @@ public class AggregationServer extends Thread{
             // start heart beat timer for disconnecting expired feeds (12s)
             timer();
 
-//            atomSocket = serverSocket.accept();
         } catch (Exception e){
             System.out.println("ATOM::Error in initialize ATOM Server");
             e.printStackTrace();
@@ -55,8 +55,9 @@ public class AggregationServer extends Thread{
                 atomSocket = serverSocket.accept();
                 new Thread(atom).start();
             }
-        }catch (IOException e) {
-                e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println ("ATOM:: Error in ATOM Socket");
+            e.printStackTrace();
         }
     }
 
@@ -76,24 +77,47 @@ public class AggregationServer extends Thread{
 
             // read keyword to process PUT and GET requests.
             String keyword = inMSG.substring(0,3);
+
             XMLParser parser = new XMLParser();
+
             // PUT request from Content server, update heartbeat test and process news feeds, return status code
             if (keyword.equals("PUT")){
                 String contentServerID = "";
                 if (arr.length>2) contentServerID = arr[2];
 
-                String outMSG = processPUT(inMSG,contentServerID);
+                String FILE_TO_RECEIVE = "feedXML_atom_received.xml";
+                File file = new File (FILE_TO_RECEIVE);
+
+                if (! file.exists ()){
+                    file.createNewFile ();
+                }
+
+
+                String outMSG = processPUT(FILE_TO_RECEIVE, contentServerID);
                 outATOM.writeUTF(outMSG);
                 System.out.println("ATOM:: Send Status Code to Content Server: " + outMSG);
 
-                parser.receiveXML("feedXML_atom_received.xml",atomSocket);
-                System.out.println("ATOM:: Receive a feed from content server: " + contentServerID);
+//                parser.receiveXML(FILE_TO_RECEIVE,atomSocket);
+//                System.out.println("ATOM:: Receive a feed from content server: " + contentServerID);
             }
 
             // GET request from Client, read backup File and send out active aggregation feeds message
             else if (keyword.equals("GET")){
-                String outMSG = processGET();
+                String outMSG = "";
+                File file = new File ("feeds_atom_to_client.xml");
+
+                if(!file.exists()){
+                    file.createNewFile();
+                }
+
+                if (file.length ()!=0){
+                    outMSG = String.valueOf (file.length ()) ;
+                } else {
+                    outMSG = "EMPTY";
+                }
+                outMSG += "@" + String.valueOf (logical_clock);
                 outATOM.writeUTF(outMSG);
+                processGET();
             }
             // Process illegal request by sending error status code 400
             else {
@@ -112,11 +136,15 @@ public class AggregationServer extends Thread{
         }
     }
 
-    protected String processPUT(String inMSG, String contentServerID) throws IOException {
+    protected String processPUT(String FILE_TO_RECEIVE, String contentServerID) throws IOException {
         System.out.println("\n*********************************************");
         System.out.println("ATOM:: Receive [PUT] from Content Server [" + contentServerID + "]");
         System.out.println("ATOM:: Update Lamport TimeStamp: " + logical_clock  );
         System.out.println("*********************************************\n");
+
+        XMLParser parser = new XMLParser ();
+        parser.receiveXML(FILE_TO_RECEIVE, atomSocket);
+        System.out.println("ATOM:: Receive a feed from content server: " + contentServerID);
 
         // update this content server's feed timer to zero
         if (!feedList.isEmpty()){
@@ -124,7 +152,7 @@ public class AggregationServer extends Thread{
         }
 
         // aggregate new feed with id
-        aggregationFeeds(inMSG, contentServerID);
+        aggregationFeeds(contentServerID);
 
         // save news feeds to local file
         backupFeeds();
@@ -132,9 +160,7 @@ public class AggregationServer extends Thread{
         // return correct status code & timestamp to content server
         int statusCode = returnStatusCode(contentServerID);
 
-        String outMSG = statusCode + "@" + logical_clock;
-
-        return outMSG;
+        return statusCode + "@" + logical_clock;
     }
 
     private void resetFeedTimer(String contentServerID){
@@ -149,64 +175,67 @@ public class AggregationServer extends Thread{
     }
 
     // get feeds from backup file
-    protected String processGET() {
+    protected void processGET() throws IOException {
         System.out.println("\n********************************************");
         System.out.println("ATOM:: Receive [GET] from Client Application");
         System.out.println("********************************************\n");
 
         // read feeds from local backup file
-        String readBackup = "";
-        String FILE_TO_SEND = "backup.xml";
-        File backup = new File (FILE_TO_SEND);
-        System.out.println(backup.exists());
-        if (backup.exists()){
-            readBackup = String.valueOf(logical_clock);
-            // Send XML file to client
-            XMLParser parser = new XMLParser();
+        String FILE_TO_SEND = "feeds_atom_to_client.xml";
+        File sendFile = new File (FILE_TO_SEND);
+        if (!sendFile.exists ()){
             try {
-                parser.sendXML(FILE_TO_SEND,atomSocket);
+                sendFile.createNewFile();
             } catch (IOException e) {
-                System.out.println("ATOM:: Error! Feeds file is not available");
-                e.printStackTrace();
+                e.printStackTrace ( );
             }
-            System.out.println("ATOM:: Send News Feeds to Client.\nATOM:: Update Lamport TimeStamp: " + readBackup);
-        } else {
-            System.out.println("ATOM:: Error! Feeds file is not available");
         }
-        return readBackup;
+
+        String feeds = atomFeeds(FILE_TO_SEND);
+
+        XMLParser parser = new XMLParser ( );
+
+        if (sendFile.length ( ) != 0) {
+
+//                parser.createXml(FILE_TO_SEND);
+            parser.sendXML (FILE_TO_SEND, atomSocket);
+            System.out.println ("ATOM:: News Feeds have sent to Client: (" + sendFile.length () +" bytes)");
+
+        } else{
+//                parser.sendXML (FILE_TO_SEND, atomSocket);
+            System.out.println("ATOM:: News Feed is Empty. Please come back later.");
+        }
+
     }
 
     protected void timer() {
         System.out.println("ATOM:: Start timer...");
-        new Thread(){
-            @Override
-            public void run() {
-                try {
-                    while (true){
-                        Thread.sleep(1000);
+        new Thread(() -> {
+            try {
+                while (true){
+                    Thread.sleep(1000);
 
-                        if(!feedList.isEmpty()){
-                            for (Feed f: feedList) {
-                                f.setTimer(f.getTimer()+1);
-                            }
-                            System.out.print("ATOM:: Heart Beat Test: "+ feedList.getFirst().getTimer()  + "\tTotal feeds number: [" + feedList.size()+"]\t");
-                            String active = "";
-                            for (int i = 0; i < activeContentServers.size(); i++) {
-                                active += activeContentServers.get(i) + " ";
-                            }
-                            System.out.println("Active Content Server(ID): " + active);
-                            updateFeeds();
-                            if (feedList.isEmpty()){
-                                System.out.println("\nATOM:: Finish all processes. Wait for next request.\n= = = = = = = = = = = = = = = = = = = = = = = = =\n");
-                            }
+                    if(!feedList.isEmpty()){
+                        for (Feed f: feedList) {
+                            f.setTimer(f.getTimer()+1);
                         }
-
+                        System.out.print("ATOM:: Heart Beat Test: "+ feedList.getFirst().getTimer()  + "\tTotal feeds number: [" + feedList.size()+"]\t");
+                        String active = "";
+                        for (int i = 0; i < activeContentServers.size(); i++) {
+                            active += activeContentServers.get(i) + " ";
+                        }
+                        System.out.println("Active Content Server(ID): " + active);
+                        updateFeeds();
+                        if (feedList.isEmpty()){
+                            System.out.println("\nATOM:: Finish all processes. Wait for next request.\n= = = = = = = = = = = = = = = = = = = = = = = = =\n");
+                        }
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
     }
 
     private void incrementLamport (){
@@ -218,7 +247,25 @@ public class AggregationServer extends Thread{
         logical_clock = Math.max(logical_clock,timestamp) + 1;
         System.out.println("ATOM:: Update timestamp: " + logical_clock);
     }
+    protected String atomFeeds(String fileName){
+        String latestFeeds = "";
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter (fileName, "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace ( );
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace ( );
+        }
 
+        for (int i = 0; i < feedList.size(); i++) {
+            latestFeeds = latestFeeds + feedList.get(i).getContent() + "\n";
+
+            writer.println(feedList.get(i).getContent());
+        }
+        writer.close();
+        return latestFeeds;
+    }
     // recover from backup file and create Feed object  w/ content ID
     protected void recoverFeeds() {
         String FILE_TO_RECOVER = "backup.xml";
@@ -230,6 +277,7 @@ public class AggregationServer extends Thread{
             try {
                 backupFile.createNewFile();
             } catch (IOException e) {
+                System.out.println("ATOM:: Error in creating backup.xml file");
                 e.printStackTrace();
             }
         } else if (backupFile.exists() && backupFile.length()==0) {
@@ -264,9 +312,17 @@ public class AggregationServer extends Thread{
     }
 
     // aggregate new feed to finalFeeds, and update to latest 20 and within 12s
-    private void aggregationFeeds(String inMSG, String id){
-        System.out.println("ATOM:: Aggregate new feed ");
-        String content = "<" + inMSG.split("<",2)[1];
+    private void aggregationFeeds(String id){
+        System.out.println("ATOM:: Aggregate new feed to latest feeds list");
+
+        XMLParser parser = new XMLParser ();
+        File file = new File ("feedXML_atom_received.xml");
+//        if (file.length ()!=0){
+
+            String content = parser.readFile ("feedXML_atom_received.xml");
+            System.out.println (">>>>>>>>>>" + content );
+//        }
+//        String content = "<" + inMSG.split("<",2)[1];
         Feed aFeed = new Feed(content,id);
         feedList.add(aFeed);
 
@@ -330,6 +386,7 @@ public class AggregationServer extends Thread{
         System.out.println("ATOM:: Backup feeds to local file " + fileName);
         String latestFeeds = "";
         for (int i = 0; i < feedList.size(); i++) {
+//            latestFeeds = latestFeeds + feedList.get(i).getContent() + "\n";
             latestFeeds = latestFeeds + feedList.get(i).getContent() + "~~"+ feedList.get(i).getSource() +"^^^^^\n";
         }
 
@@ -342,65 +399,6 @@ public class AggregationServer extends Thread{
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        System.out.println("ATOM:: Backup file is done: " + fileName);
+        System.out.println("ATOM:: Backup is finished: " + fileName);
     }
-
-//    private void receiveXML() throws IOException {
-//        int bytesRead;
-//        int current = 0;
-//        FileOutputStream fos = null;
-//        BufferedOutputStream bos = null;
-//        String FILE_TO_RECEIVED = "feedXML_atom_received.xml";
-//
-//        System.out.println("ATOM:: receiving XML file");// receive file
-//        int FILE_SIZE = 102400;
-//        byte[] mybytearray = new byte[FILE_SIZE];
-//
-//        InputStream is = atomSocket.getInputStream();
-//
-//        fos = new FileOutputStream(FILE_TO_RECEIVED);
-//        bos = new BufferedOutputStream(fos);
-//        bytesRead = is.read(mybytearray, 0, mybytearray.length);
-//        current = bytesRead;
-//
-//        do {
-//            bytesRead =
-//                    is.read(mybytearray, current, (mybytearray.length - current));
-//            if (bytesRead >= 0) current += bytesRead;
-//        } while (bytesRead > -1);
-//
-//        bos.write(mybytearray, 0, current);
-//        bos.flush();
-//        System.out.println("ATOM:: File " + FILE_TO_RECEIVED
-//                + " downloaded (" + current + " bytes read)");
-//
-//        if (fos != null) fos.close();
-//        if (bos != null) bos.close();
-//    }
-
-//    private void sendXML() throws IOException {
-//        FileInputStream fis = null;
-//        BufferedInputStream bis = null;
-//        OutputStream os = null;
-//        String FILE_TO_SEND = "backup.xml";
-//        try {
-//            // send file
-//            File myFile = new File (FILE_TO_SEND);
-//            byte [] mybytearray  = new byte [(int)myFile.length()];
-//            fis = new FileInputStream(myFile);
-//            bis = new BufferedInputStream(fis);
-//            bis.read(mybytearray,0,mybytearray.length);
-//            os = atomSocket.getOutputStream();
-//            System.out.println("ATOM:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
-//            os.write(mybytearray,0,mybytearray.length);
-//            os.flush();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (bis != null) bis.close();
-//            if (os != null) os.close();
-//            System.out.println("ATOM:: XML file hss sent to GETClient.");
-//        }
-//    }
 }
