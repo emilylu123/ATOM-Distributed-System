@@ -135,39 +135,86 @@ public class ContentServer implements Runnable {
     }
 
     private String PUT(String id) throws IOException {
-        DataInputStream inContent = new DataInputStream(contentSocket.getInputStream());
-        DataOutputStream outContent = new DataOutputStream(contentSocket.getOutputStream());
+        DataInputStream inContent = new DataInputStream (contentSocket.getInputStream ( ));
+        DataOutputStream outContent = new DataOutputStream (contentSocket.getOutputStream ( ));
 
         // read feed XML file and format it as a String
-        XMLParser parser = new XMLParser();
-        String newsFeed = parser.readXML(xmlName);
+        XMLParser parser = new XMLParser ( );
+//        String newsFeed = parser.readXML(xmlName);
+        String newsFeed = readXML ( );
+
         String type = "XML";
-        int length = newsFeed.length();
+        int length = newsFeed.length ( );
 
         String header = "PUT /atom.xml HTTP/1.1\n" + "User-Agent: ATOMClient/1/0\n";
         header += "Content-Type: " + type + "\n" + "Content-Length: " + length + "\n";
 
-        String putMSG = header + newsFeed + "@" + logical_clock + "@" +id;
+        String putMSG = header + newsFeed + "@" + logical_clock + "@" + id;
 
-        // send feed XML file to ATOM server
 
         // send to ATOM server + timestamp+1
-        outContent.writeUTF(putMSG);
+        outContent.writeUTF (putMSG);
 
-        parser.sendXML(xmlName,contentSocket);
-        System.out.println("Content:: A new feed has been sent to ATOM Server");
+        // send feed XML file to ATOM server
+//        parser.sendXML(xmlName,contentSocket);
+        sendXML (xmlName);
+        System.out.println ("Content:: A new feed has been sent to ATOM Server");
 
-        incrementLamport();
+        incrementLamport ( );
 
         // get status code from ATOM server
-        String inMSG = inContent.readUTF(); //todo
-        String[] array = inMSG.split("@");
+        String inMSG = inContent.readUTF ( ); //todo
+        String[] array = inMSG.split ("@");
         String statusCode = array[0];
-        int timestamp = Integer.parseInt(array[1]);
+        int timestamp = Integer.parseInt (array[1]);
 
         //update Lamport by max + 1
-        updateLamport(timestamp);
-        System.out.println("Content:: Receive Status Code ["+ statusCode + "] @ time " + logical_clock);
+        updateLamport (timestamp);
+        System.out.println ("Content:: Receive Status Code [" + statusCode + "] @ time " + logical_clock);
         return statusCode;
+    }
+
+
+    // read XML file and return a string in the correct format
+    private String readXML() {
+        String readXML = "";
+        BufferedReader br;
+        try {
+            br = new BufferedReader (new FileReader (xmlName));
+            String line = br.readLine ( );
+            do {
+                readXML += line + "\n";
+                line = br.readLine ( );
+            } while (line != null);
+            br.close ( );
+        } catch (IOException e) {
+            e.printStackTrace ( );
+        }
+        return readXML;
+    }
+
+    // send xml file as a feed to ATOM server
+    private void sendXML(String xml) throws IOException {
+        FileInputStream fis = null;
+        BufferedInputStream bis = null;
+        OutputStream os = null;
+        try {
+            // send file
+            File myFile = new File (xml);
+            byte[] mybytearray = new byte[(int) myFile.length ( )];
+            fis = new FileInputStream (myFile);
+            bis = new BufferedInputStream (fis);
+            bis.read (mybytearray, 0, mybytearray.length);
+            os = contentSocket.getOutputStream ( );
+            System.out.println ("Content:: Sending " + xml + "(" + mybytearray.length + " bytes)");
+            os.write (mybytearray, 0, mybytearray.length);
+            os.flush ( );
+        } catch (IOException e) {
+            e.printStackTrace ( );
+        } finally {
+            bis.close ( );
+            fis = null;
+            os = null;
+        }
     }
 }

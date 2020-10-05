@@ -92,8 +92,8 @@ class XMLParser extends DefaultHandler {
     String readFile(String fileName)  {
         String readContent = "";
         File file = new File (fileName);
-        List<String> list = new LinkedList<String>();
-        BufferedReader reader;
+        List<String> list = new LinkedList<String> ( );
+        BufferedReader br;
 
         System.out.println("XML Parser:: Reading File...");
         try{
@@ -101,12 +101,12 @@ class XMLParser extends DefaultHandler {
                 System.out.println ("XML:: File is not exist.");
                 file.createNewFile();
             } else {
-                reader = new BufferedReader(new FileReader(fileName));
-                String line = reader.readLine();
-                while((line = reader.readLine()) != null) {
+                br = new BufferedReader (new FileReader (fileName));
+                String line = br.readLine ( );
+                while ((line = br.readLine ( )) != null) {
                     readContent += line + "\n";
                 }
-                reader.close();
+                br.close ( );
             }
         }
         catch (IOException e){
@@ -214,7 +214,7 @@ class XMLParser extends DefaultHandler {
         BufferedReader reader;
         try{
             reader = new BufferedReader(new FileReader(xmlName));
-            String line = reader.readLine();;
+            String line = reader.readLine ( );
             do{
                 readxml += line + "\n";
                 line = reader.readLine();
@@ -248,7 +248,7 @@ class XMLParser extends DefaultHandler {
             try {
                 return new ByteArrayInputStream(xml.getBytes());
             }catch (Exception ex){
-                System.out.println("XML Parser: Error in InputStream.");;
+                System.out.println ("XML Parser: Error in InputStream.");
             }
         }
         return null;
@@ -272,18 +272,20 @@ class XMLParser extends DefaultHandler {
         current = bytesRead;
 
         do {
-            bytesRead = is.read(bt, current, (bt.length - current));
+            bytesRead = is.read (bt, current, (bt.length - current));
             if (bytesRead >= 0) current += bytesRead;
         } while (bytesRead > -1);
 
-        bos.write(bt, 0, current);
-        bos.flush();
+        bos.write (bt, 0, current);
+        bos.flush ( );
 
-        System.out.println("XML Parser:: File " + FILE_TO_RECEIVED
+        System.out.println ("XML Parser:: File " + FILE_TO_RECEIVED
                 + " downloaded (" + current + " bytes read)");
 
-        if (fos != null) fos.close();
-        if (bos != null) bos.close();
+//        if (bos != null)
+        bos.close ( );
+//        if (fos != null)
+        fos = null;
     }
 
     void sendXML(String FILE_TO_SEND, Socket a_socket) throws IOException {
@@ -304,8 +306,8 @@ class XMLParser extends DefaultHandler {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (bis != null) bis.close();
-            if (os != null) os.close();
+            if (bis != null) bis.close ( );
+            if (os != null) os = null;
             System.out.println("ATOM:: XML file hss sent to GETClient.");
         }
     }
