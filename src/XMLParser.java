@@ -270,14 +270,19 @@ class XMLParser extends DefaultHandler {
         bos = new BufferedOutputStream(fos);
         bytesRead = is.read(bt, 0, bt.length);
         current = bytesRead;
-
+        System.out.println ("22");
         do {
+
             bytesRead = is.read (bt, current, (bt.length - current));
             if (bytesRead >= 0) current += bytesRead;
+            System.out.println ("23");
         } while (bytesRead > -1);
+        System.out.println ("3");
 
         bos.write (bt, 0, current);
+        System.out.println ("4");
         bos.flush ( );
+        System.out.println ("5");
 
         System.out.println ("XML Parser:: File " + FILE_TO_RECEIVED
                 + " downloaded (" + current + " bytes read)");

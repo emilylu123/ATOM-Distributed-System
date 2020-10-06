@@ -97,6 +97,7 @@ public class GETClient implements Runnable {
 
     // send GET request with timestamp
     private void GET() {
+
         System.out.println ("GETClient:: Sending PUT Request to ATOM server");
 
         DataInputStream inGET = null;
