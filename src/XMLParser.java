@@ -102,7 +102,7 @@ class XMLParser extends DefaultHandler {
                 file.createNewFile();
             } else {
                 br = new BufferedReader (new FileReader (fileName));
-                String line = br.readLine ( );
+                String line;
                 while ((line = br.readLine ( )) != null) {
                     readContent += line + "\n";
                 }
@@ -244,76 +244,73 @@ class XMLParser extends DefaultHandler {
     }
 
     InputStream getstringstream(String xml) {
-        if (xml != null && !xml.trim().equals("")) {
+        if (xml != null && !xml.trim ( ).equals ("")) {
             try {
-                return new ByteArrayInputStream(xml.getBytes());
-            }catch (Exception ex){
+                return new ByteArrayInputStream (xml.getBytes ( ));
+            } catch (Exception ex) {
                 System.out.println ("XML Parser: Error in InputStream.");
             }
         }
         return null;
     }
 
-    void receiveXML(String FILE_TO_RECEIVED, Socket a_socket) throws IOException {
+    void receiveXML(String FILE_TO_RECEIVED, Socket a_socket)
+            throws IOException {
+
         System.out.println ("XML Parser:: receive XML file " + FILE_TO_RECEIVED);
-        int bytesRead;
-        int current = 0;
-        FileOutputStream fos = null;
-        BufferedOutputStream bos = null;
 
-        int FILE_SIZE = 10240000;
-        byte[] bt = new byte[FILE_SIZE];
+        DataInputStream dis = new DataInputStream (a_socket.getInputStream ( ));
 
-        InputStream is = null;
-        is = a_socket.getInputStream();
-        fos = new FileOutputStream(FILE_TO_RECEIVED);
-        bos = new BufferedOutputStream(fos);
-        bytesRead = is.read(bt, 0, bt.length);
-        current = bytesRead;
-        System.out.println ("22");
-        do {
+        // 文件名和长度
+//        String fileName = dis.readUTF();
+//        long fileLength = dis.readLong();
+        File myFile = new File (FILE_TO_RECEIVED);
+        if (!myFile.exists ( ))
+            myFile.createNewFile ( );
 
-            bytesRead = is.read (bt, current, (bt.length - current));
-            if (bytesRead >= 0) current += bytesRead;
-            System.out.println ("23");
-        } while (bytesRead > -1);
-        System.out.println ("3");
+        FileOutputStream fos = new FileOutputStream (myFile);
 
-        bos.write (bt, 0, current);
-        System.out.println ("4");
-        bos.flush ( );
-        System.out.println ("5");
-
-        System.out.println ("XML Parser:: File " + FILE_TO_RECEIVED
-                + " downloaded (" + current + " bytes read)");
-
-//        if (bos != null)
-        bos.close ( );
-//        if (fos != null)
-        fos = null;
+        byte[] bytes = new byte[1024];
+        int length = 0;
+        while ((length = dis.read (bytes, 0, bytes.length)) != -1) {
+            fos.write (bytes, 0, length);
+            fos.flush ( );
+        }
+//        System.out.println("======== 文件接收成功 [File Name：" + fileName + "] [Size：" + fileLength + "] ========");
     }
 
     void sendXML(String FILE_TO_SEND, Socket a_socket) throws IOException {
         FileInputStream fis = null;
-        BufferedInputStream bis = null;
-        OutputStream os = null;
+        DataOutputStream dos = null;
         try {
             // send file
             File myFile = new File (FILE_TO_SEND);
-            byte [] mybytearray  = new byte [(int)myFile.length()];
-            fis = new FileInputStream(myFile);
-            bis = new BufferedInputStream(fis);
-            bis.read(mybytearray,0,mybytearray.length);
-            os = a_socket.getOutputStream();
-            System.out.println("ATOM:: Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
-            os.write(mybytearray,0,mybytearray.length);
-            os.flush();
+            dos = new DataOutputStream (a_socket.getOutputStream ( ));
+            fis = new FileInputStream (myFile);
+
+            // name and length
+//            dos.writeUTF(myFile.getName());
+//            dos.flush();
+//            dos.writeLong(myFile.length());
+//            dos.flush();
+
+            // sending file
+            System.out.println ("======== 开始传输文件 ========");
+            byte[] bytes = new byte[1024];
+            int length = 0;
+            long progress = 0;
+            while ((length = fis.read (bytes, 0, bytes.length)) != -1) {
+                dos.write (bytes, 0, length);
+                dos.flush ( );
+                progress += length;
+                System.out.print ("| " + (100 * progress / myFile.length ( )) + "% |");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (bis != null) bis.close ( );
-            if (os != null) os = null;
-            System.out.println("ATOM:: XML file hss sent to GETClient.");
+            if (fis != null) fis.close ( );
+            if (dos != null) dos.close ( );
+            System.out.println ("ATOM:: XML file hss sent to GETClient.");
         }
     }
 

@@ -206,15 +206,21 @@ public class ContentServer implements Runnable {
             bis = new BufferedInputStream (fis);
             bis.read (mybytearray, 0, mybytearray.length);
             os = contentSocket.getOutputStream ( );
-            System.out.println ("Content:: Sending " + xml + "(" + mybytearray.length + " bytes)");
             os.write (mybytearray, 0, mybytearray.length);
+            System.out.println ("Content:: is " + isConnected ( ));
+            System.out.println ("Content:: Sending " + xml + "(" + mybytearray.length + " bytes)");
             os.flush ( );
         } catch (IOException e) {
             e.printStackTrace ( );
         } finally {
-            bis.close ( );
-            fis = null;
-            os = null;
+//            bis.close ( );
+            System.out.println ("Content:: is " + isConnected ( ));
+//            fis = null;
+//            os = null;
         }
+    }
+
+    public boolean isConnected() {
+        return contentSocket != null && contentSocket.isConnected ( );
     }
 }

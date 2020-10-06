@@ -26,7 +26,6 @@ public class AggregationServer extends Thread {
     public AggregationServer(int port) {
 
         try {
-//            connect (port);
             serverSocket = new ServerSocket (port);
             System.out.println (" >>" + isConnected ( ));
             System.out.println ("==============================");
@@ -89,7 +88,7 @@ public class AggregationServer extends Thread {
             // PUT request from Content server, update heartbeat test and process news feeds, return status code
             if (keyword.equals("PUT")){
                 String contentServerID = "";
-                if (arr.length>2) contentServerID = arr[2];
+                if (arr.length > 2) contentServerID = arr[2];
 
                 String FILE_TO_RECEIVE = "feedXML_atom_received.xml";
                 File file = new File (FILE_TO_RECEIVE);
@@ -97,6 +96,8 @@ public class AggregationServer extends Thread {
                 if (!file.exists ( )) {
                     file.createNewFile ( );
                 }
+
+                System.out.println (" if connected >>" + isConnected ( ));
 
                 String outMSG = processPUT (FILE_TO_RECEIVE, contentServerID);
                 dos.writeUTF (outMSG);
@@ -142,6 +143,7 @@ public class AggregationServer extends Thread {
             System.out.println ("\nATOM:: Finish all processes. Wait for next request.\n= = = = = = = = = = = = = = = = = = = = = = = = =\n");
         } catch (SocketTimeoutException s) {
             System.out.println ("ATOM:: Socket timed out!");
+            s.printStackTrace ( );
         } catch (IOException e) {
             e.printStackTrace ( );
         }
@@ -164,110 +166,6 @@ public class AggregationServer extends Thread {
         }
     }
 
-    public void connect(int port) {
-//    public void connect(String ip, int port) {
-        if (isConnected ( )) {
-            disConnect ( );
-        }
-        int connectNum = 0;
-        boolean isConnect = false;
-        while (true) {
-            try {
-                connectNum++;
-//                atomSocket = null;
-//                atomSocket = new Socket("0.0.0",portNumber);
-//                atomSocket = new Socket ( port );
-                if (atomSocket.isConnected ( )) {
-                    dos = new DataOutputStream (atomSocket.getOutputStream ( ));
-                    dis = new DataInputStream (atomSocket.getInputStream ( ));
-                    isConnect = true;
-                }
-                break;
-            } catch (IOException e) {
-                e.printStackTrace ( );
-                try {
-                    Thread.sleep (500);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace ( );
-                }
-            }
-        }
-        if (isConnect) {
-            readerServerPush ( );
-        } else {
-            System.err.println ("ATOM:: Connection failed");
-        }
-
-    }
-
-
-    public void send(byte[] bytes) throws IOException {
-        if (atomSocket != null) {
-            synchronized (AggregationServer.class) {
-                if (isConnected ( )) {
-                    dos.write (bytes);
-                    dos.flush ( );
-                }
-            }
-        }
-    }
-
-    private void readerServerPush() {
-        if (atomSocket != null) {
-            synchronized (AggregationServer.class) {
-                if (isConnected ( )) {
-                    try {
-                        byte[] bytes = new byte[1];
-                        dis.read (bytes);
-                        byte[] bytes1 = new byte[Integer.parseInt (new String (bytes))];
-                        dis.read (bytes1);
-                        String serverPush = new String (bytes1);
-                        System.out.print (serverPush);
-//                        socketIOCallback.onReceive(serverPush);
-                    } catch (IOException e) {
-                        e.printStackTrace ( );
-//                        socketIOCallback.onConnectFailed(e);
-                    }
-                }
-            }
-        }
-
-    }
-
-    public void sendFile(String fileName) throws IOException {
-        if (atomSocket != null) {
-            synchronized (AggregationServer.class) {
-                if (isConnected ( )) {
-                    File file = new File (fileName);
-                    if (file.exists ( )) {
-                        //send type
-                        dos.writeInt (0);
-                        dos.flush ( );
-                        //send name
-                        dos.writeUTF (file.getName ( ));
-                        dos.flush ( );
-                        //send length
-                        dos.writeLong (file.length ( ));
-                        dos.flush ( );
-                        //send stream
-                        byte[] bytes = new byte[1024];
-                        int length = 0;
-                        long progress = 0;
-                        FileInputStream fileInputStream = new FileInputStream (file);
-                        while ((length = fileInputStream.read (bytes, 0, bytes.length)) != -1) {
-                            dos.write (bytes, 0, length);
-                            dos.flush ( );
-                            progress += length;
-                            System.out.println ("| " + (100 * progress / file.length ( )) + "% |");
-                        }
-                    } else {
-                        return;
-                    }
-
-                }
-            }
-        }
-    }
 
     protected String processPUT(String FILE_TO_RECEIVE, String contentServerID) throws IOException {
         System.out.println ("\n*********************************************");
